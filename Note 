@@ -1,0 +1,25 @@
+Realizza un app che gestisce i clienti degli studi dentistici:
+
+L'app deve permettere di inserire i dati dei pazienti e le cure che ho effettuato su di loro. 
+Inoltre vorrei che ci fosse un sistema di promemoria per i richiami dei pazienti.
+
+Funzionalità:
+- Gestione appuntamenti/calendario (Prenota, Cancella, Cambia Data)
+- Gestione pazienti (Inserisci, Modifica, Cancella)
+- Gestione cure e tipo di visita
+- Gestione richiami (per pulizia dentale o cose simili)
+- Gestione pagamenti, preventivi e ricevute
+- Portale per entrambi: bot su whatsapp per i pazienti cosi da non dovere scaricare un'app, e un portale per i dentisti per gestire i pazienti, che si accede dal browser con mail e password
+
+
+Contesto: 
+Gli studi dentistici hanno necessita di gestire i propri pazienti e le cure che hanno effettuato su di loro. Un sistema che aiuta sia i pazienti sia i dentsisti. 
+
+Realizza un documento di progetto funzionale e tecnico per lo sviluppo da dare al team di sviluppo. Questo deve avere indicazioni delle funzionalità, come devono essere e dei dati. 
+
+Il documento é in formato markdown e in italiano:
+
+Lo stack tecnologico deve essere: 
+- NextJS
+- Tailwind CSS
+- Database in NEON DB

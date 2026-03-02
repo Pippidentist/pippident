@@ -7,9 +7,9 @@ import { z } from "zod";
 const checkoutSchema = z.object({
   studioName: z.string().min(2, "Nome studio troppo corto").max(255),
   ownerName: z.string().min(2, "Nome troppo corto").max(255),
-  email: z.string().email("Email non valida"),
+  email: z.email("Email non valida"),
   password: z.string().min(8, "La password deve avere almeno 8 caratteri"),
-  plan: z.enum(["base", "pro", "clinic"]),
+  plan: z.enum(["essenziale", "completo"]),
 });
 
 export async function POST(req: Request) {
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.errors[0].message },
+        { error: parsed.error.issues[0].message },
         { status: 400 }
       );
     }

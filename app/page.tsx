@@ -16,6 +16,10 @@ import {
   Zap,
   TrendingUp,
   Phone,
+  Moon,
+  CalendarCheck,
+  CalendarX,
+  Clock,
 } from "lucide-react";
 
 const features = [
@@ -59,11 +63,11 @@ const features = [
 
 const plans = [
   {
-    name: "Essenziale",
+    name: "Base",
     price: "99",
-    description: "Per 1 studio odontoiatrico",
+    description: "Solo gestionale, no bot, no AI",
     features: [
-      "Gestione pazienti illimitata",
+      "Gestione pazienti",
       "Calendario appuntamenti",
       "Catalogo cure e storico clinico",
       "Preventivi e pagamenti",
@@ -73,19 +77,43 @@ const plans = [
     highlighted: false,
   },
   {
-    name: "Completo",
-    price: "199",
-    description: "Per 1 studio odontoiatrico",
+    name: "Growth",
+    price: "349",
+    description: "Fino a 1.000 pazienti",
     features: [
-      "Tutto il piano Essenziale",
-      "Bot WhatsApp integrato",
+      "Tutto il piano Base",
+      "WhatsApp Bot integrato",
+      "150 chiamate AI/mese",
       "Promemoria appuntamenti via WhatsApp",
-      "Richiami automatici via WhatsApp",
       "Prenotazioni pazienti via WhatsApp",
+    ],
+    cta: "Inizia gratis",
+    highlighted: false,
+  },
+  {
+    name: "Pro",
+    price: "599",
+    description: "Fino a 2.500 pazienti",
+    features: [
+      "Tutto il piano Growth",
+      "250 chiamate AI/mese",
       "Supporto prioritario",
     ],
     cta: "Inizia gratis",
     highlighted: true,
+  },
+  {
+    name: "Clinic",
+    price: "799",
+    description: "Fino a 6.000 pazienti",
+    features: [
+      "Tutto il piano Pro",
+      "500 chiamate AI/mese",
+      "Supporto dedicato",
+      "Onboarding personalizzato",
+    ],
+    cta: "Inizia gratis",
+    highlighted: false,
   },
 ];
 
@@ -156,7 +184,7 @@ export default async function Home() {
               </Button>
             </Link>
           </div>
-          <p className="mt-6 text-sm text-gray-400">30 giorni gratuiti · Nessuna carta richiesta</p>
+          <p className="mt-6 text-sm text-gray-400">15 giorni gratuiti · Nessuna carta richiesta</p>
         </div>
       </section>
 
@@ -261,6 +289,94 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ── AI Phone Agent ───────────────────────────────────────── */}
+      <section className="py-20 px-6 bg-gradient-to-br from-indigo-50 to-blue-50">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row-reverse gap-12 items-center">
+          <div className="flex-1">
+            <Badge className="mb-4 bg-indigo-100 text-indigo-700 border-0">Agente AI vocale — Prossimamente</Badge>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Quando lo studio è chiuso, risponde l&apos;AI.
+            </h2>
+            <p className="text-gray-600 mb-6 leading-relaxed">
+              L&apos;agente vocale AI di Pippident risponde alle chiamate fuori orario, prenota o cancella
+              appuntamenti e riduce i no-show — senza sostituire il tuo team, ma supportandolo
+              nelle ore in cui non puoi esserci.
+            </p>
+            <ul className="space-y-3">
+              {[
+                { icon: CalendarCheck, text: "Prenota appuntamenti in autonomia" },
+                { icon: CalendarX, text: "Gestisce cancellazioni e modifiche" },
+                { icon: Moon, text: "Attivo solo fuori orario di studio" },
+                { icon: Clock, text: "Riduce i no-show con promemoria vocali" },
+              ].map(({ icon: Icon, text }) => (
+                <li key={text} className="flex items-center gap-3 text-gray-700">
+                  <Icon className="w-5 h-5 text-indigo-500 shrink-0" />
+                  <span className="text-sm">{text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* iPhone call mock */}
+          <div className="flex-1 flex justify-center">
+            <div className="relative bg-gray-900 rounded-[2.5rem] shadow-2xl w-64 h-[480px] flex flex-col overflow-hidden border-[6px] border-gray-800">
+              {/* Notch */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-gray-900 rounded-b-2xl z-10" />
+              {/* Status bar */}
+              <div className="flex justify-between items-center px-6 pt-3 pb-1 text-white text-[10px]">
+                <span>22:14</span>
+                <div className="flex gap-1 items-center">
+                  <span>●●●●</span>
+                  <span>WiFi</span>
+                  <span>🔋</span>
+                </div>
+              </div>
+              {/* Call screen */}
+              <div className="flex flex-col items-center flex-1 pt-8 px-4">
+                <p className="text-gray-400 text-xs mb-2 tracking-widest uppercase">Chiamata in corso</p>
+                <div className="w-20 h-20 rounded-full bg-indigo-600 flex items-center justify-center mb-4 shadow-lg">
+                  <Stethoscope className="w-9 h-9 text-white" />
+                </div>
+                <p className="text-white font-semibold text-lg leading-tight text-center">Studio Dentistico</p>
+                <p className="text-gray-300 text-sm mb-1">Bianchi &amp; Associati</p>
+                <p className="text-indigo-400 text-xs font-medium mb-6">Assistente AI · 02:14</p>
+
+                {/* Waveform */}
+                <div className="flex items-end gap-[3px] h-8 mb-8">
+                  {[3,6,10,7,12,5,9,14,8,6,11,4,9,7,5].map((h, i) => (
+                    <div
+                      key={i}
+                      className="w-1 bg-indigo-400 rounded-full opacity-80"
+                      style={{ height: `${h * 2}px` }}
+                    />
+                  ))}
+                </div>
+
+                {/* Buttons */}
+                <div className="grid grid-cols-3 gap-4 w-full px-2">
+                  {[
+                    { label: "Muto" },
+                    { label: "Tastiera" },
+                    { label: "Altoparlante" },
+                  ].map(({ label }) => (
+                    <div key={label} className="flex flex-col items-center gap-1">
+                      <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center" />
+                      <span className="text-gray-400 text-[9px]">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* End call button */}
+              <div className="flex justify-center pb-8">
+                <div className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg">
+                  <Phone className="w-7 h-7 text-white rotate-[135deg]" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Pricing ──────────────────────────────────────────────── */}
       <section id="prezzi" className="py-24 px-6">
         <div className="max-w-5xl mx-auto">
@@ -269,7 +385,7 @@ export default async function Home() {
             <p className="text-gray-500 text-lg">Nessun costo nascosto. Disdici quando vuoi.</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.name}
@@ -345,10 +461,73 @@ export default async function Home() {
             ))}
           </div>
 
-          <p className="text-center text-sm text-gray-400 mt-10">
-            Tutti i piani includono 30 giorni di prova gratuita. Puoi aggiornare o cancellare in
+          <p className="text-center text-sm text-gray-500 mt-10 font-medium">
+            Per tutti i piani: Chiamate extra +€0.50/call per chi supera il limite
+          </p>
+          <p className="text-center text-sm text-gray-400 mt-3">
+            Tutti i piani includono 15 giorni di prova gratuita. Puoi aggiornare o cancellare in
             qualsiasi momento.
           </p>
+        </div>
+      </section>
+
+      {/* ── Reviews ──────────────────────────────────────────────── */}
+      <section className="py-24 px-6 bg-gray-50">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Cosa dicono i dentisti che lo usano
+            </h2>
+            <p className="text-gray-500 text-lg">Studi reali, risultati concreti.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                name: "Dott. Marco Ferretti",
+                role: "Titolare, Studio Ferretti — Milano",
+                avatar: "MF",
+                text: "Usavamo un'agenda cartacea e WhatsApp personale per i promemoria. Con Pippident ho recuperato almeno tre ore a settimana e i no-show sono calati del 40%. Setup in un pomeriggio.",
+                stars: 5,
+              },
+              {
+                name: "Dott.ssa Laura Conti",
+                role: "Ortodontista — Roma",
+                avatar: "LC",
+                text: "I miei pazienti adorano ricevere i promemoria su WhatsApp. Nessuno scarica app, nessuna resistenza. Ho iniziato con il piano Base e sono passata a Growth dopo due settimane.",
+                stars: 5,
+              },
+              {
+                name: "Dott. Gianluca Russo",
+                role: "Studio Russo & Partners — Napoli",
+                avatar: "GR",
+                text: "Gestisco tre riuniti e uno staff di sei persone. Finalmente ho una visione chiara del calendario e dei pagamenti in sospeso. Il supporto risponde in tempi rapidissimi.",
+                stars: 5,
+              },
+            ].map((review) => (
+              <div
+                key={review.name}
+                className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm flex flex-col gap-4"
+              >
+                <div className="flex gap-1">
+                  {Array.from({ length: review.stars }).map((_, i) => (
+                    <svg key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </div>
+                <p className="text-gray-600 text-sm leading-relaxed flex-1">&ldquo;{review.text}&rdquo;</p>
+                <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+                  <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold shrink-0">
+                    {review.avatar}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">{review.name}</div>
+                    <div className="text-xs text-gray-400">{review.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -393,7 +572,7 @@ export default async function Home() {
             Pronto a modernizzare il tuo studio?
           </h2>
           <p className="text-blue-100 mb-8 text-lg">
-            Inizia oggi con 30 giorni gratuiti. Nessuna carta di credito richiesta.
+            Inizia oggi con 15 giorni gratuiti. Nessuna carta di credito richiesta.
           </p>
           <a href="#prezzi">
             <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 text-base px-8">

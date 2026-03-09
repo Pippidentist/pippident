@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut, User } from "lucide-react";
+import Link from "next/link";
 
 const roleLabels: Record<string, string> = {
   super_admin: "Super Admin",
@@ -62,10 +63,10 @@ export function Header() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <button className="w-full flex items-center gap-2 cursor-pointer">
+              <Link href="/dashboard/settings" className="flex items-center gap-2 cursor-pointer">
                 <User className="h-4 w-4" />
                 Profilo
-              </button>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

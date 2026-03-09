@@ -14,6 +14,10 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  if ((session.user as { twoFactorPending?: boolean }).twoFactorPending) {
+    redirect("/verify-otp");
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar />

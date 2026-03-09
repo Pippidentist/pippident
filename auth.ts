@@ -1,14 +1,19 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { db, users } from "@/lib/db";
+import { db, users, twoFactorCodes } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { sendOtpEmail } from "@/lib/email";
 
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
+
+function generateOtp(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -35,6 +40,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const passwordMatch = await bcrypt.compare(password, user.passwordHash);
         if (!passwordMatch) return null;
 
+        // Generate OTP and send via email
+        const code = generateOtp();
+        const codeHash = await bcrypt.hash(code, 10);
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+
+        await db.insert(twoFactorCodes).values({ userId: user.id, codeHash, expiresAt });
+
+        await sendOtpEmail(user.email, code).catch((err) =>
+          console.error("[2FA] Failed to send OTP email:", err)
+        );
+
         // Update last login
         await db
           .update(users)
@@ -45,6 +61,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id,
           email: user.email,
           name: user.fullName,
+          twoFactorPending: true,
           studioId: user.studioId,
           role: user.role,
         };
@@ -52,19 +69,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id ?? "";
+        token.twoFactorPending = (user as { twoFactorPending?: boolean }).twoFactorPending ?? false;
         token.studioId = (user as { studioId: string }).studioId;
         token.role = (user as { role: string }).role;
+      }
+      if (trigger === "update" && session?.twoFactorPending === false) {
+        token.twoFactorPending = false;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        (session.user as { studioId: string }).studioId = token.studioId as string;
-        (session.user as { role: string }).role = token.role as string;
+        (session.user as unknown as { twoFactorPending: boolean }).twoFactorPending =
+          (token.twoFactorPending as boolean) ?? false;
+        if (!token.twoFactorPending) {
+          (session.user as { studioId: string }).studioId = token.studioId as string;
+          (session.user as { role: string }).role = token.role as string;
+        }
       }
       return session;
     },

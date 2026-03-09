@@ -37,13 +37,17 @@ export async function POST(req: Request) {
     const { studioName, ownerName, email, passwordHash, plan } = meta;
 
     // Idempotency guard: skip if user already exists
-    const [existing] = await db
+    const [existingUser] = await db
       .select({ id: users.id })
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
 
-    if (!existing) {
+    if (existingUser) {
+      console.log(`[webhook] User for ${email} already exists, skipping`);
+    } else {
+      // Studio may already exist if a previous webhook attempt created it but
+      // crashed before inserting the user. Upsert to handle both cases.
       const [studio] = await db
         .insert(studios)
         .values({
@@ -51,6 +55,10 @@ export async function POST(req: Request) {
           email,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           settings: { plan, stripeSubscriptionId: session.subscription } as any,
+        })
+        .onConflictDoUpdate({
+          target: studios.email,
+          set: { settings: { plan, stripeSubscriptionId: session.subscription } as any },
         })
         .returning({ id: studios.id });
 
@@ -62,9 +70,7 @@ export async function POST(req: Request) {
         role: "admin",
       });
 
-      console.log(`[webhook] Studio created for ${email} (plan: ${plan})`);
-    } else {
-      console.log(`[webhook] Studio for ${email} already exists, skipping`);
+      console.log(`[webhook] Studio + user created for ${email} (plan: ${plan})`);
     }
   }
 

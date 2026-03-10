@@ -47,6 +47,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         await db.insert(twoFactorCodes).values({ userId: user.id, codeHash, expiresAt });
 
+        if (process.env.NODE_ENV === "development") {
+          console.log(`[2FA DEV] OTP code for ${user.email}: ${code}`);
+        }
+
         await sendOtpEmail(user.email, code).catch((err) =>
           console.error("[2FA] Failed to send OTP email:", err)
         );

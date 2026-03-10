@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { patients } from "@/lib/db/schema";
+import { patients, studios } from "@/lib/db/schema";
 import { eq, and, or, ilike, sql } from "drizzle-orm";
 import { z } from "zod";
+import { sendWhatsAppMessage, buildWelcomeMessage } from "@/lib/whatsapp";
 
 const createPatientSchema = z.object({
   firstName: z.string().min(1, "Nome obbligatorio"),
@@ -116,6 +117,21 @@ export async function POST(request: NextRequest) {
       firstVisitDate: data.firstVisitDate || null,
     })
     .returning();
+
+  // Send WhatsApp welcome message if studio has a Twilio number configured
+  const [studio] = await db
+    .select({ name: studios.name, twilioPhoneFrom: studios.twilioPhoneFrom })
+    .from(studios)
+    .where(eq(studios.id, studioId))
+    .limit(1);
+
+  if (studio?.twilioPhoneFrom) {
+    sendWhatsAppMessage(
+      data.phone,
+      buildWelcomeMessage(`${data.firstName} ${data.lastName}`, studio.name),
+      studio.twilioPhoneFrom
+    ).catch((err) => console.error("[WhatsApp welcome]", err));
+  }
 
   return NextResponse.json(patient, { status: 201 });
 }

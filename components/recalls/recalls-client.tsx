@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bell, CheckCircle, XCircle, Send } from "lucide-react";
+import { Bell, CheckCircle, XCircle, Send, MessageCircle } from "lucide-react";
 import Link from "next/link";
 
 interface RecallItem {
@@ -57,10 +57,34 @@ export function RecallsClient({ initialRecalls, daysWindow, statusFilter }: Reca
   const pathname = usePathname();
   const [recalls, setRecalls] = useState(initialRecalls);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [sendingWaId, setSendingWaId] = useState<string | null>(null);
 
   function setFilter(days: number, status: string) {
     const params = new URLSearchParams({ days: String(days), status });
     router.push(`${pathname}?${params.toString()}`);
+  }
+
+  async function sendWhatsApp(recall: RecallItem) {
+    if (!recall.patientPhone) {
+      toast.error("Paziente senza numero di telefono");
+      return;
+    }
+    setSendingWaId(recall.id);
+    try {
+      const res = await fetch("/api/whatsapp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recallId: recall.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Errore");
+      setRecalls((prev) => prev.map((r) => (r.id === recall.id ? { ...r, status: "sent" } : r)));
+      toast.success("WhatsApp inviato!");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Errore nell'invio");
+    } finally {
+      setSendingWaId(null);
+    }
   }
 
   async function updateStatus(id: string, status: "sent" | "completed" | "ignored") {
@@ -192,6 +216,16 @@ export function RecallsClient({ initialRecalls, daysWindow, statusFilter }: Reca
                     <div className="flex items-center gap-1">
                       {recall.status === "active" && (
                         <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Invia WhatsApp"
+                            disabled={sendingWaId === recall.id || !recall.patientPhone}
+                            onClick={() => sendWhatsApp(recall)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

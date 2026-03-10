@@ -11,6 +11,7 @@ const updateSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   vatNumber: z.string().optional(),
+  twilioPhoneFrom: z.string().optional(),
 });
 
 export async function PATCH(request: NextRequest) {

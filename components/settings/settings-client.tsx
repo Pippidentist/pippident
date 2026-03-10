@@ -77,6 +77,8 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [savingStudio, setSavingStudio] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
+  const [twilioPhone, setTwilioPhone] = useState(studio.twilioPhoneFrom ?? "");
+  const [savingWhatsapp, setSavingWhatsapp] = useState(false);
 
   const studioForm = useForm<StudioFormValues>({
     resolver: zodResolver(studioSchema),
@@ -135,6 +137,25 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
     }
   }
 
+  async function saveWhatsapp(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingWhatsapp(true);
+    try {
+      const res = await fetch("/api/settings/studio", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ twilioPhoneFrom: twilioPhone.trim() || null }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Configurazione WhatsApp salvata");
+      router.refresh();
+    } catch {
+      toast.error("Errore nel salvataggio");
+    } finally {
+      setSavingWhatsapp(false);
+    }
+  }
+
   async function toggleUser(userId: string, isActive: boolean) {
     try {
       const res = await fetch(`/api/settings/users/${userId}`, {
@@ -157,6 +178,7 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
       <TabsList>
         <TabsTrigger value="studio">Profilo Studio</TabsTrigger>
         <TabsTrigger value="users">Utenti ({users.length})</TabsTrigger>
+        <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
       </TabsList>
 
       {/* Tab Studio */}
@@ -212,6 +234,49 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
                 </div>
               </form>
             </Form>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* Tab WhatsApp */}
+      <TabsContent value="whatsapp">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Configurazione WhatsApp Bot</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={saveWhatsapp} className="space-y-4 max-w-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Numero WhatsApp Studio (Twilio)
+                </label>
+                <Input
+                  placeholder="whatsapp:+393331234567"
+                  value={twilioPhone}
+                  onChange={(e) => setTwilioPhone(e.target.value)}
+                />
+                <p className="text-xs text-gray-500 mt-1.5">
+                  Inserisci il numero Twilio nel formato <code>whatsapp:+39XXXXXXXXXX</code>.
+                  Per la sandbox usa <code>whatsapp:+14155238886</code>.
+                  I pazienti potranno interagire con il bot da questo numero.
+                </p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700 space-y-1">
+                <p className="font-medium">Funzionalità abilitate quando configurato:</p>
+                <ul className="list-disc list-inside space-y-0.5 text-xs">
+                  <li>Messaggio di benvenuto ai nuovi pazienti</li>
+                  <li>Registrazione self-service via WhatsApp</li>
+                  <li>Lista appuntamenti su richiesta</li>
+                  <li>Cancellazione appuntamenti via chat</li>
+                  <li>Reminder automatici 48h e 2h prima</li>
+                </ul>
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={savingWhatsapp}>
+                  {savingWhatsapp ? "Salvataggio..." : "Salva configurazione WhatsApp"}
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       </TabsContent>

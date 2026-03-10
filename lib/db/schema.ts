@@ -10,6 +10,7 @@ import {
   decimal,
   jsonb,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -25,6 +26,7 @@ export const studios = pgTable("studios", {
   logoUrl: text("logo_url"),
   whatsappPhoneNumberId: varchar("whatsapp_phone_number_id", { length: 100 }),
   whatsappToken: text("whatsapp_token"),
+  twilioPhoneFrom: varchar("twilio_phone_from", { length: 50 }),
   settings: jsonb("settings").$type<{
     openingHours?: Record<string, { open: string; close: string }>;
     whatsappTemplates?: Record<string, string>;
@@ -130,6 +132,8 @@ export const appointments = pgTable(
     notes: text("notes"),
     reminderSent: boolean("reminder_sent").default(false).notNull(),
     reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
+    secondReminderSent: boolean("second_reminder_sent").default(false).notNull(),
+    secondReminderSentAt: timestamp("second_reminder_sent_at", { withTimezone: true }),
     cancellationReason: text("cancellation_reason"),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -267,6 +271,20 @@ export const payments = pgTable(
   },
   (table) => [index("idx_payments_patient").on(table.patientId)]
 );
+
+// ─── WHATSAPP SESSIONS (Bot conversation state) ───────────────────────────────
+
+export const whatsappSessions = pgTable("whatsapp_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  studioId: uuid("studio_id").notNull().references(() => studios.id, { onDelete: "cascade" }),
+  phone: varchar("phone", { length: 50 }).notNull(),
+  state: varchar("state", { length: 50 }).notNull().default("menu"),
+  data: jsonb("data").$type<Record<string, unknown>>().default({}).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+}, (t) => [
+  uniqueIndex("idx_wa_session_studio_phone").on(t.studioId, t.phone),
+]);
 
 // ─── WHATSAPP MESSAGES ────────────────────────────────────────────────────────
 

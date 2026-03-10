@@ -8,10 +8,7 @@ export default async function AuthLayout({
 }) {
   const session = await auth();
 
-  // Redirect fully authenticated users away from auth pages
-  // (but NOT users with twoFactorPending, they need to access /verify-otp)
-  const twoFactorPending = (session?.user as { twoFactorPending?: boolean })?.twoFactorPending;
-  if (session?.user && !twoFactorPending) {
+  if (session?.user) {
     redirect("/dashboard");
   }
 

@@ -16,13 +16,14 @@ export async function POST(req: NextRequest) {
 
   const now = new Date();
 
-  // Windows: 48h ± 1h and 2h ± 1h
-  const win48Start = addHours(now, 47);
-  const win48End = addHours(now, 49);
-  const win2Start = addHours(now, 1);
-  const win2End = addHours(now, 3);
+  // Cron runs once/day at 07:00 (Vercel Hobby limit).
+  // "Tomorrow" reminder: appointments 20–32h from now (covers all of tomorrow).
+  // "Today" reminder:    appointments 1–12h from now (covers today's remaining slots).
+  const winTomorrowStart = addHours(now, 20);
+  const winTomorrowEnd   = addHours(now, 32);
+  const winTodayStart    = addHours(now, 1);
+  const winTodayEnd      = addHours(now, 12);
 
-  // Fetch appointments for both windows in one query
   const rows = await db
     .select({
       id: appointments.id,
@@ -53,10 +54,10 @@ export async function POST(req: NextRequest) {
     );
 
   const reminder48 = rows.filter(
-    (r) => !r.reminderSent && r.startTime >= win48Start && r.startTime <= win48End
+    (r) => !r.reminderSent && r.startTime >= winTomorrowStart && r.startTime <= winTomorrowEnd
   );
   const reminder2 = rows.filter(
-    (r) => !r.secondReminderSent && r.startTime >= win2Start && r.startTime <= win2End
+    (r) => !r.secondReminderSent && r.startTime >= winTodayStart && r.startTime <= winTodayEnd
   );
 
   let sent = 0;

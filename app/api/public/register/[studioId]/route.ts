@@ -21,7 +21,7 @@ const registrationSchema = z.object({
   phone: z.string().min(6, "Telefono obbligatorio"),
   email: z.union([z.literal(""), z.string().email("Email non valida")]).optional(),
   notes: z.string().optional(),
-  gdprConsent: z.literal(true, { errorMap: () => ({ message: "Il consenso è obbligatorio" }) }),
+  gdprConsent: z.literal(true, { error: "Il consenso è obbligatorio" }),
 });
 
 export async function POST(

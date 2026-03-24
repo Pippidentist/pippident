@@ -27,7 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 const schema = z.object({
   firstName: z.string().min(1, "Nome obbligatorio"),
   lastName: z.string().min(1, "Cognome obbligatorio"),
-  gender: z.enum(["M", "F", "Other"], { required_error: "Sesso obbligatorio" }),
+  gender: z.enum(["M", "F", "Other"], { error: "Sesso obbligatorio" }),
   dateOfBirth: z.string().optional(),
   fiscalCode: z
     .string()
@@ -41,7 +41,7 @@ const schema = z.object({
   phone: z.string().min(6, "Telefono obbligatorio"),
   email: z.union([z.literal(""), z.string().email("Email non valida")]).optional(),
   notes: z.string().optional(),
-  gdprConsent: z.literal(true, { errorMap: () => ({ message: "Il consenso è obbligatorio per procedere" }) }),
+  gdprConsent: z.literal(true, { error: "Il consenso è obbligatorio per procedere" }),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -290,7 +290,7 @@ export function PatientRegistrationForm({ studioId, studioName }: PatientRegistr
             <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border p-4 bg-gray-50">
               <FormControl>
                 <Checkbox
-                  checked={field.value}
+                  checked={field.value === true}
                   onCheckedChange={field.onChange}
                 />
               </FormControl>

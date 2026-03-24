@@ -28,16 +28,14 @@ const schema = z.object({
   firstName: z.string().min(1, "Nome obbligatorio"),
   lastName: z.string().min(1, "Cognome obbligatorio"),
   gender: z.enum(["M", "F", "Other"], { error: "Sesso obbligatorio" }),
-  dateOfBirth: z.string().optional(),
+  dateOfBirth: z.string().min(1, "Data di nascita obbligatoria"),
   fiscalCode: z
     .string()
-    .regex(/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/, "Codice fiscale non valido")
-    .optional()
-    .or(z.literal("")),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  postalCode: z.string().optional(),
-  province: z.string().max(5).optional(),
+    .regex(/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/, "Codice fiscale non valido"),
+  address: z.string().min(1, "Indirizzo obbligatorio"),
+  city: z.string().min(1, "Città obbligatoria"),
+  postalCode: z.string().min(5, "CAP obbligatorio"),
+  province: z.string().min(2, "Provincia obbligatoria").max(2),
   phone: z.string().min(6, "Telefono obbligatorio"),
   email: z.union([z.literal(""), z.string().email("Email non valida")]).optional(),
   notes: z.string().optional(),
@@ -163,7 +161,7 @@ export function PatientRegistrationForm({ studioId, studioName }: PatientRegistr
             name="dateOfBirth"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Data di nascita</FormLabel>
+                <FormLabel>Data di nascita *</FormLabel>
                 <FormControl><Input type="date" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
@@ -177,7 +175,7 @@ export function PatientRegistrationForm({ studioId, studioName }: PatientRegistr
           name="fiscalCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Codice Fiscale</FormLabel>
+              <FormLabel>Codice Fiscale *</FormLabel>
               <FormControl>
                 <Input
                   placeholder="RSSMRA80A01H501U"
@@ -197,7 +195,7 @@ export function PatientRegistrationForm({ studioId, studioName }: PatientRegistr
           name="address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Indirizzo</FormLabel>
+              <FormLabel>Indirizzo *</FormLabel>
               <FormControl><Input placeholder="Via Roma 1" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
@@ -209,7 +207,7 @@ export function PatientRegistrationForm({ studioId, studioName }: PatientRegistr
             name="city"
             render={({ field }) => (
               <FormItem className="col-span-2 sm:col-span-1">
-                <FormLabel>Città</FormLabel>
+                <FormLabel>Città *</FormLabel>
                 <FormControl><Input placeholder="Milano" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
@@ -220,7 +218,7 @@ export function PatientRegistrationForm({ studioId, studioName }: PatientRegistr
             name="postalCode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>CAP</FormLabel>
+                <FormLabel>CAP *</FormLabel>
                 <FormControl><Input placeholder="20121" maxLength={5} {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
@@ -231,7 +229,7 @@ export function PatientRegistrationForm({ studioId, studioName }: PatientRegistr
             name="province"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Prov.</FormLabel>
+                <FormLabel>Prov. *</FormLabel>
                 <FormControl><Input placeholder="MI" maxLength={2} className="uppercase" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
                 <FormMessage />
               </FormItem>

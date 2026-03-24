@@ -8,16 +8,14 @@ const registrationSchema = z.object({
   firstName: z.string().min(1, "Nome obbligatorio"),
   lastName: z.string().min(1, "Cognome obbligatorio"),
   gender: z.enum(["M", "F", "Other"]),
-  dateOfBirth: z.string().optional(),
+  dateOfBirth: z.string().min(1),
   fiscalCode: z
     .string()
-    .regex(/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/, "Codice fiscale non valido")
-    .optional()
-    .or(z.literal("")),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  postalCode: z.string().optional(),
-  province: z.string().max(5).optional(),
+    .regex(/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/, "Codice fiscale non valido"),
+  address: z.string().min(1),
+  city: z.string().min(1),
+  postalCode: z.string().min(5),
+  province: z.string().min(2).max(2),
   phone: z.string().min(6, "Telefono obbligatorio"),
   email: z.union([z.literal(""), z.string().email("Email non valida")]).optional(),
   notes: z.string().optional(),

@@ -11,14 +11,10 @@ import {
 import { eq, and, gt, gte, lte, asc } from "drizzle-orm";
 import { addDays, addMinutes } from "date-fns";
 import {
-  sendWhatsAppMessage,
-  buildWelcomeMessage,
   buildHelpMenu,
   buildAppointmentListMessage,
   buildCancellationListMessage,
   buildCancellationConfirmMessage,
-  buildRegistrationPromptName,
-  buildRegistrationConfirmMessage,
   type AppointmentEntry,
 } from "@/lib/whatsapp";
 
@@ -136,49 +132,16 @@ export async function handleIncomingMessage(params: {
     return buildHelpMenu(name);
   }
 
-  // 5. No session or new patient → registration flow
+  // 5. Unknown patient → send registration link
   if (!existingPatient) {
-    if (!session || session.state === "menu") {
-      await upsertSession(studio.id, fromPhone, "reg_name", {});
-      return buildRegistrationPromptName(studio.name);
-    }
-
-    if (session.state === "reg_name") {
-      const parts = body.trim().split(/\s+/);
-      if (parts.length < 2) {
-        return "Per favore, inserisca nome e cognome (es: Mario Rossi).";
-      }
-      const firstName = parts[0];
-      const lastName = parts.slice(1).join(" ");
-      await upsertSession(studio.id, fromPhone, "reg_confirm", { firstName, lastName });
-      return buildRegistrationConfirmMessage(firstName, lastName);
-    }
-
-    if (session.state === "reg_confirm") {
-      if (text === "SI" || text === "SÌ") {
-        const { firstName, lastName } = session.data as { firstName: string; lastName: string };
-        const [newPatient] = await db
-          .insert(patients)
-          .values({
-            studioId: studio.id,
-            firstName,
-            lastName,
-            phone: fromPhone,
-            gdprConsent: true,
-            gdprConsentDate: new Date(),
-          })
-          .returning({ id: patients.id, firstName: patients.firstName, lastName: patients.lastName });
-        await upsertSession(studio.id, fromPhone, "menu", {});
-        return buildWelcomeMessage(`${newPatient.firstName} ${newPatient.lastName}`, studio.name);
-      }
-      if (text === "NO") {
-        await upsertSession(studio.id, fromPhone, "reg_name", {});
-        return buildRegistrationPromptName(studio.name);
-      }
-      return "Risponda *SI* per confermare o *NO* per ricominciare.";
-    }
-
-    return buildRegistrationPromptName(studio.name);
+    const baseUrl = process.env.NEXTAUTH_URL ?? "https://pippident.vercel.app";
+    const registrationUrl = `${baseUrl}/register/${studio.id}`;
+    return (
+      `Benvenuto/a su *${studio.name}*! 👋\n\n` +
+      `Per poter accedere ai servizi del bot (appuntamenti, promemoria, ecc.) è necessario registrarsi.\n\n` +
+      `📋 Compila il modulo di registrazione al seguente link:\n${registrationUrl}\n\n` +
+      `Una volta completata la registrazione potrai scrivere qui per gestire i tuoi appuntamenti.`
+    );
   }
 
   // 6. Known patient flows

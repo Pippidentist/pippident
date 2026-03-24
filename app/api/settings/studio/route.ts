@@ -32,9 +32,15 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Dati non validi" }, { status: 400 });
   }
 
+  const data = { ...parsed.data };
+  // Normalize twilioPhoneFrom: always store with "whatsapp:" prefix
+  if (data.twilioPhoneFrom && !data.twilioPhoneFrom.startsWith("whatsapp:")) {
+    data.twilioPhoneFrom = `whatsapp:${data.twilioPhoneFrom}`;
+  }
+
   const [updated] = await db
     .update(studios)
-    .set(parsed.data)
+    .set(data)
     .where(eq(studios.id, studioId))
     .returning();
 

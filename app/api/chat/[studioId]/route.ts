@@ -1,4 +1,4 @@
-import { streamText, tool, stepCountIs } from "ai";
+import { streamText, tool, stepCountIs, convertToModelMessages } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -167,7 +167,7 @@ export async function POST(
   const result = streamText({
     model: createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })("anthropic/claude-sonnet-4-5"),
     system: fullSystemPrompt,
-    messages: messages.slice(-20),
+    messages: await convertToModelMessages(messages.slice(-20)),
     stopWhen: stepCountIs(5),
     tools: {
       getStudioInfo: tool({

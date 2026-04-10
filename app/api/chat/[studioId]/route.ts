@@ -164,10 +164,19 @@ export async function POST(
     .replace(/\{STUDIO_PHONE\}/g, studio.phone ?? "lo studio")
     + studioContext + patientContext + "\n\n---\n\n" + kb;
 
+  let modelMessages;
+  try {
+    modelMessages = await convertToModelMessages(messages.slice(-20));
+  } catch (e) {
+    console.error("[chat] convertToModelMessages error:", e);
+    return new Response(JSON.stringify({ error: "Message conversion failed" }), { status: 500 });
+  }
+
   const result = streamText({
     model: createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })("anthropic/claude-sonnet-4-5"),
     system: fullSystemPrompt,
-    messages: await convertToModelMessages(messages.slice(-20)),
+    messages: modelMessages,
+    onError: (e) => console.error("[chat] streamText error:", e),
     stopWhen: stepCountIs(5),
     tools: {
       getStudioInfo: tool({

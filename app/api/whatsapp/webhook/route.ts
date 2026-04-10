@@ -23,11 +23,19 @@ export async function POST(req: NextRequest) {
 
   // Validate Twilio signature
   const signature = req.headers.get("x-twilio-signature") ?? "";
-  const url = process.env.NEXTAUTH_URL
+  const host = req.headers.get("host") ?? "";
+  const urlFromHost = `https://${host}/api/whatsapp/webhook`;
+  const urlFromEnv = process.env.NEXTAUTH_URL
     ? `${process.env.NEXTAUTH_URL}/api/whatsapp/webhook`
-    : `https://${req.headers.get("host")}/api/whatsapp/webhook`;
+    : urlFromHost;
 
-  if (authToken && !twilio.validateRequest(authToken, signature, url, params)) {
+  const validFromHost = authToken ? twilio.validateRequest(authToken, signature, urlFromHost, params) : true;
+  const validFromEnv  = authToken ? twilio.validateRequest(authToken, signature, urlFromEnv, params) : true;
+
+  console.log("[WA webhook] host:", host, "validFromHost:", validFromHost, "validFromEnv:", validFromEnv);
+
+  if (authToken && !validFromHost && !validFromEnv) {
+    console.error("[WA webhook] Signature validation failed. URL host:", urlFromHost, "URL env:", urlFromEnv);
     return new NextResponse("Firma non valida", { status: 403 });
   }
 
@@ -36,6 +44,8 @@ export async function POST(req: NextRequest) {
   const body: string = params["Body"] ?? "";
   const messageSid: string = params["MessageSid"] ?? "";
 
+  console.log("[WA webhook] From:", fromRaw, "To:", toRaw, "Body:", body, "SID:", messageSid);
+
   // Normalize phone: strip "whatsapp:" prefix
   const fromPhone = fromRaw.replace(/^whatsapp:/, "");
   const toPhone = toRaw; // keep full format e.g. "whatsapp:+14155238886"
@@ -43,6 +53,7 @@ export async function POST(req: NextRequest) {
   let replyText: string;
   try {
     replyText = await handleIncomingMessage({ fromPhone, toPhone, body, waMessageId: messageSid });
+    console.log("[WA webhook] Reply:", replyText.substring(0, 100));
   } catch (err) {
     console.error("[WhatsApp webhook]", err);
     replyText = "Si è verificato un errore. Riprova tra qualche minuto.";

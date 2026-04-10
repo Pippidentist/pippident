@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Calendar,
+  Clock,
   Users,
   Stethoscope,
   Bell,
@@ -24,6 +25,11 @@ const navItems = [
     label: "Calendario",
     href: "/dashboard/calendar",
     icon: Calendar,
+  },
+  {
+    label: "In Attesa",
+    href: "/dashboard/appointments/pending",
+    icon: Clock,
   },
   {
     label: "Pazienti",

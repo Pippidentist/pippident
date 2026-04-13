@@ -1,5 +1,5 @@
 import { streamText, tool, stepCountIs, convertToModelMessages } from "ai";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import {
@@ -173,7 +173,7 @@ export async function POST(
   }
 
   const result = streamText({
-    model: createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })("anthropic/claude-sonnet-4-5"),
+    model: createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY })("gemini-1.5-flash"),
     system: fullSystemPrompt,
     messages: modelMessages,
     onError: (e) => console.error("[chat] streamText error:", e),

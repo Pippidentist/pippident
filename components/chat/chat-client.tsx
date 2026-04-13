@@ -32,7 +32,7 @@ export function ChatClient({ studioId, studioName, studioPhone, patientName, pho
         parts: [
           {
             type: "text",
-            text: `Buongiorno ${patientName}! Sono l'assistente virtuale dello studio ${studioName}. Come posso aiutarLa oggi? Posso:\n\n• Fissare un appuntamento\n• Mostrarle i suoi prossimi appuntamenti\n• Cancellare un appuntamento\n• Rispondere a domande sullo studio`,
+            text: `Buongiorno ${patientName}! Sono l'assistente virtuale di ${studioName}. Come posso aiutarLa oggi? Posso:\n\n• Fissare un appuntamento\n• Mostrarle i suoi prossimi appuntamenti\n• Cancellare un appuntamento\n• Rispondere a domande sullo studio`,
           },
         ],
       },

@@ -56,15 +56,14 @@ export async function handleIncomingMessage(params: {
     );
   }
 
-  // 4. Known patient → send AI chatbot link
+  // 4. Known patient → show help menu
   const patientName = `${existingPatient.firstName} ${existingPatient.lastName}`;
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://pippident.vercel.app";
-  const chatUrl = `${baseUrl}/chat/${studio.id}?phone=${encodeURIComponent(fromPhone)}`;
 
   return (
     `Ciao ${patientName}! 👋\n\n` +
-    `Per gestire i suoi appuntamenti, parlare con il nostro assistente virtuale o avere informazioni sullo studio, usi il seguente link:\n\n` +
-    `🤖 ${chatUrl}\n\n` +
-    `L'assistente è disponibile 24/7 e potrà aiutarla a prenotare, consultare o cancellare appuntamenti.`
+    `Come posso aiutarti?\n\n` +
+    `📅 *APPUNTAMENTI* – vedere i prossimi appuntamenti\n` +
+    `❌ *ANNULLA* – cancellare un appuntamento\n` +
+    `ℹ️ *AIUTO* – mostrare questo menu`
   );
 }

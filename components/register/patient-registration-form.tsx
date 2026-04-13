@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -51,9 +50,7 @@ interface PatientRegistrationFormProps {
 }
 
 export function PatientRegistrationForm({ studioId, studioName }: PatientRegistrationFormProps) {
-  const router = useRouter();
   const [submitted, setSubmitted] = useState(false);
-  const [registeredPhone, setRegisteredPhone] = useState("");
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
@@ -82,7 +79,6 @@ export function PatientRegistrationForm({ studioId, studioName }: PatientRegistr
         body: JSON.stringify(data),
       });
       if (res.ok) {
-        setRegisteredPhone(data.phone);
         setSubmitted(true);
       } else {
         const json = await res.json();
@@ -97,29 +93,14 @@ export function PatientRegistrationForm({ studioId, studioName }: PatientRegistr
     }
   }
 
-  useEffect(() => {
-    if (!submitted || !registeredPhone) return;
-    const timer = setTimeout(() => {
-      router.push(`/chat/${studioId}?phone=${encodeURIComponent(registeredPhone)}`);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [submitted, registeredPhone, studioId, router]);
-
   if (submitted) {
-    const chatUrl = `/chat/${studioId}?phone=${encodeURIComponent(registeredPhone)}`;
     return (
       <div className="text-center py-12 space-y-3">
         <div className="text-5xl">✅</div>
         <h2 className="text-xl font-semibold text-gray-800">Registrazione completata!</h2>
         <p className="text-gray-500">
-          Tra pochi secondi verrà reindirizzato all&apos;assistente virtuale di <strong>{studioName}</strong>.
+          Il suo profilo è stato registrato presso <strong>{studioName}</strong>. Può ora tornare su WhatsApp per gestire i suoi appuntamenti.
         </p>
-        <a
-          href={chatUrl}
-          className="inline-block mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium underline"
-        >
-          Clicca qui se non vieni reindirizzato
-        </a>
       </div>
     );
   }

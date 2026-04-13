@@ -1,5 +1,5 @@
 import { streamText, tool, stepCountIs, convertToModelMessages } from "ai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import {
@@ -173,7 +173,7 @@ export async function POST(
   }
 
   const result = streamText({
-    model: createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY })("gemini-1.5-flash"),
+    model: createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })("claude-haiku-4-5-20251001"),
     system: fullSystemPrompt,
     messages: modelMessages,
     onError: (e) => console.error("[chat] streamText error:", e),

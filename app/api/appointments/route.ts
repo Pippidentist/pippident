@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { appointments, patients, users, treatmentTypes } from "@/lib/db/schema";
+import { appointments, patients, users, treatmentTypes, studios } from "@/lib/db/schema";
 import { eq, and, gte, lte, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
@@ -115,6 +115,55 @@ export async function POST(request: NextRequest) {
       { error: "Il dentista ha già un appuntamento in questo orario" },
       { status: 409 }
     );
+  }
+
+  // Validate against studio opening hours
+  const [studioData] = await db
+    .select({ settings: studios.settings })
+    .from(studios)
+    .where(eq(studios.id, studioId))
+    .limit(1);
+
+  const openingHours = studioData?.settings?.openingHours;
+  if (openingHours && Object.keys(openingHours).length > 0) {
+    const startDate = new Date(data.startTime);
+    const endDate = new Date(data.endTime);
+
+    const dayName = new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+      timeZone: "Europe/Rome",
+    }).format(startDate);
+
+    const daySchedule = openingHours[dayName];
+    if (!daySchedule) {
+      return NextResponse.json(
+        { error: "Lo studio è chiuso in questo giorno" },
+        { status: 422 }
+      );
+    }
+
+    const toMinutes = (hhmm: string) => {
+      const [h, m] = hhmm.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    const getRomeHHMM = (date: Date) =>
+      new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "Europe/Rome",
+      }).format(date);
+
+    if (
+      toMinutes(getRomeHHMM(startDate)) < toMinutes(daySchedule.open) ||
+      toMinutes(getRomeHHMM(endDate)) > toMinutes(daySchedule.close)
+    ) {
+      return NextResponse.json(
+        { error: `Lo studio è aperto dalle ${daySchedule.open} alle ${daySchedule.close}` },
+        { status: 422 }
+      );
+    }
   }
 
   const [appointment] = await db

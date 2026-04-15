@@ -1,42 +1,54 @@
 import { db } from "@/lib/db";
-import {
-  studios,
-  patients,
-  whatsappMessages,
-} from "@/lib/db/schema";
+import { studios, patients, whatsappMessages } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
-// ── Main handler ──────────────────────────────────────────────────────────────
-
+/**
+ * Handles all incoming WhatsApp messages.
+ *
+ * Routing logic:
+ *  - Unknown patient  → link to registration page
+ *  - Known patient    → link to Pippibot chat
+ *
+ * All other conversation happens inside Pippibot (/chat).
+ */
 export async function handleIncomingMessage(params: {
-  fromPhone: string;  // normalized: "+393331234567"
-  toPhone: string;    // "whatsapp:+14155238886" (the studio's number)
+  fromPhone: string; // normalized: "+393331234567"
+  toPhone: string;   // studio's Twilio number: "whatsapp:+14155238886"
   body: string;
   waMessageId: string;
 }): Promise<string> {
   const { fromPhone, toPhone, body, waMessageId } = params;
 
-  // 1. Find studio by its Twilio number
+  const baseUrl = process.env.NEXTAUTH_URL ?? "https://pippident.vercel.app";
+
+  // 1. Identify studio by its Twilio number
   const [studio] = await db
-    .select({ id: studios.id, name: studios.name, twilioPhoneFrom: studios.twilioPhoneFrom })
+    .select({ id: studios.id, name: studios.name })
     .from(studios)
     .where(eq(studios.twilioPhoneFrom, toPhone))
     .limit(1);
 
   if (!studio) {
-    return "Servizio non disponibile.";
+    return "Servizio non disponibile al momento.";
   }
 
-  // 2. Log inbound message (patientId will be null if unknown)
-  const [existingPatient] = await db
-    .select({ id: patients.id, firstName: patients.firstName, lastName: patients.lastName })
+  // 2. Look up patient by phone
+  const [patient] = await db
+    .select({ id: patients.id, firstName: patients.firstName })
     .from(patients)
-    .where(and(eq(patients.studioId, studio.id), eq(patients.phone, fromPhone)))
+    .where(
+      and(
+        eq(patients.studioId, studio.id),
+        eq(patients.phone, fromPhone),
+        eq(patients.isArchived, false)
+      )
+    )
     .limit(1);
 
+  // 3. Log inbound message
   await db.insert(whatsappMessages).values({
     studioId: studio.id,
-    patientId: existingPatient?.id ?? undefined,
+    patientId: patient?.id ?? undefined,
     direction: "inbound",
     messageType: "generic",
     body,
@@ -44,26 +56,23 @@ export async function handleIncomingMessage(params: {
     waMessageId,
   });
 
-  // 3. Unknown patient → send registration link
-  if (!existingPatient) {
-    const baseUrl = process.env.NEXTAUTH_URL ?? "https://pippident.vercel.app";
+  // 4. Route
+  if (!patient) {
+    // New patient → registration link
     const registrationUrl = `${baseUrl}/register/${studio.id}`;
     return (
       `Benvenuto/a su *${studio.name}*! 👋\n\n` +
-      `Per poter accedere ai servizi del bot (appuntamenti, promemoria, ecc.) è necessario registrarsi.\n\n` +
-      `📋 Compila il modulo di registrazione al seguente link:\n${registrationUrl}\n\n` +
-      `Una volta completata la registrazione potrai scrivere qui per gestire i tuoi appuntamenti.`
+      `Per accedere ai nostri servizi online è necessario registrarsi.\n\n` +
+      `📋 Compila il modulo di registrazione:\n${registrationUrl}\n\n` +
+      `Una volta registrato potrai prenotare e gestire i tuoi appuntamenti direttamente da qui.`
     );
   }
 
-  // 4. Known patient → show help menu
-  const patientName = `${existingPatient.firstName} ${existingPatient.lastName}`;
-
+  // Known patient → Pippibot chat link
+  const chatUrl = `${baseUrl}/chat?studioId=${studio.id}&phone=${encodeURIComponent(fromPhone)}`;
   return (
-    `Ciao ${patientName}! 👋\n\n` +
-    `Come posso aiutarti?\n\n` +
-    `📅 *APPUNTAMENTI* – vedere i prossimi appuntamenti\n` +
-    `❌ *ANNULLA* – cancellare un appuntamento\n` +
-    `ℹ️ *AIUTO* – mostrare questo menu`
+    `Ciao ${patient.firstName}! 👋\n\n` +
+    `Accedi alla chat con il nostro assistente virtuale per prenotare o gestire i tuoi appuntamenti:\n\n` +
+    `💬 ${chatUrl}`
   );
 }

@@ -30,6 +30,22 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { Studio } from "@/lib/db/schema";
 
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
+type DayKey = typeof DAYS[number];
+
+const DAY_LABELS: Record<DayKey, string> = {
+  Monday: "Lunedì",
+  Tuesday: "Martedì",
+  Wednesday: "Mercoledì",
+  Thursday: "Giovedì",
+  Friday: "Venerdì",
+  Saturday: "Sabato",
+  Sunday: "Domenica",
+};
+
+type DaySchedule = { isOpen: boolean; open: string; close: string };
+type OpeningHoursState = Record<DayKey, DaySchedule>;
+
 function RegistrationLinkBox({ studioId }: { studioId: string }) {
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const link = `${baseUrl}/register/${studioId}`;
@@ -97,6 +113,19 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
   const [creatingUser, setCreatingUser] = useState(false);
   const [twilioPhone, setTwilioPhone] = useState(studio.twilioPhoneFrom ?? "");
   const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+  const [savingHours, setSavingHours] = useState(false);
+
+  const initOpeningHours = (): OpeningHoursState => {
+    const saved = (studio.settings as { openingHours?: Record<string, { open: string; close: string }> } | null)?.openingHours ?? {};
+    return Object.fromEntries(
+      DAYS.map((day) => [
+        day,
+        { isOpen: !!saved[day], open: saved[day]?.open ?? "09:00", close: saved[day]?.close ?? "18:00" },
+      ])
+    ) as OpeningHoursState;
+  };
+
+  const [openingHours, setOpeningHours] = useState<OpeningHoursState>(initOpeningHours);
 
   const studioForm = useForm<StudioFormValues>({
     resolver: zodResolver(studioSchema),
@@ -174,6 +203,35 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
     }
   }
 
+  function updateDay(day: DayKey, patch: Partial<DaySchedule>) {
+    setOpeningHours((prev) => ({ ...prev, [day]: { ...prev[day], ...patch } }));
+  }
+
+  async function saveOpeningHours(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingHours(true);
+    try {
+      const toSave = Object.fromEntries(
+        DAYS.filter((d) => openingHours[d].isOpen).map((d) => [
+          d,
+          { open: openingHours[d].open, close: openingHours[d].close },
+        ])
+      );
+      const res = await fetch("/api/settings/studio", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ openingHours: toSave }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Orari salvati");
+      router.refresh();
+    } catch {
+      toast.error("Errore nel salvataggio");
+    } finally {
+      setSavingHours(false);
+    }
+  }
+
   async function toggleUser(userId: string, isActive: boolean) {
     try {
       const res = await fetch(`/api/settings/users/${userId}`, {
@@ -195,6 +253,7 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
     <Tabs defaultValue="studio">
       <TabsList>
         <TabsTrigger value="studio">Profilo Studio</TabsTrigger>
+        <TabsTrigger value="orari">Orari</TabsTrigger>
         <TabsTrigger value="users">Utenti ({users.length})</TabsTrigger>
         <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
       </TabsList>
@@ -252,6 +311,64 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
                 </div>
               </form>
             </Form>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* Tab Orari */}
+      <TabsContent value="orari">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Orari di apertura</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-500 mb-4">
+              Configura i giorni e gli orari in cui lo studio è aperto. Non sarà possibile prenotare appuntamenti fuori da questi orari.
+            </p>
+            <form onSubmit={saveOpeningHours} className="space-y-3">
+              {DAYS.map((day) => {
+                const schedule = openingHours[day];
+                return (
+                  <div key={day} className="flex items-center gap-4 py-2 border-b border-gray-100 last:border-0">
+                    <div className="w-28">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300 accent-blue-600"
+                          checked={schedule.isOpen}
+                          onChange={(e) => updateDay(day, { isOpen: e.target.checked })}
+                        />
+                        <span className="text-sm font-medium">{DAY_LABELS[day]}</span>
+                      </label>
+                    </div>
+                    {schedule.isOpen ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="time"
+                          className="border border-gray-200 rounded-md px-2 py-1 text-sm w-28"
+                          value={schedule.open}
+                          onChange={(e) => updateDay(day, { open: e.target.value })}
+                        />
+                        <span className="text-gray-400 text-sm">—</span>
+                        <input
+                          type="time"
+                          className="border border-gray-200 rounded-md px-2 py-1 text-sm w-28"
+                          value={schedule.close}
+                          onChange={(e) => updateDay(day, { close: e.target.value })}
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400 italic">Chiuso</span>
+                    )}
+                  </div>
+                );
+              })}
+              <div className="flex justify-end pt-2">
+                <Button type="submit" disabled={savingHours}>
+                  {savingHours ? "Salvataggio..." : "Salva Orari"}
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       </TabsContent>

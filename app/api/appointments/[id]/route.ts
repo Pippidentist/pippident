@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { appointments } from "@/lib/db/schema";
+import { appointments, studios } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 
@@ -33,6 +33,75 @@ export async function PATCH(
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Dati non validi" }, { status: 400 });
+  }
+
+  // Validate against opening hours if startTime or endTime is being changed
+  if (parsed.data.startTime || parsed.data.endTime) {
+    const [studioData] = await db
+      .select({ settings: studios.settings })
+      .from(studios)
+      .where(eq(studios.id, studioId))
+      .limit(1);
+
+    const openingHours = studioData?.settings?.openingHours;
+    if (openingHours && Object.keys(openingHours).length > 0) {
+      // Need both start and end to validate; if only one is provided, fetch the existing appointment
+      let startTime = parsed.data.startTime;
+      let endTime = parsed.data.endTime;
+
+      if (!startTime || !endTime) {
+        const [existing] = await db
+          .select({ startTime: appointments.startTime, endTime: appointments.endTime })
+          .from(appointments)
+          .where(and(eq(appointments.id, id), eq(appointments.studioId, studioId)))
+          .limit(1);
+        if (existing) {
+          startTime = startTime ?? existing.startTime.toISOString();
+          endTime = endTime ?? existing.endTime.toISOString();
+        }
+      }
+
+      if (startTime && endTime) {
+        const startDate = new Date(startTime);
+        const endDate = new Date(endTime);
+
+        const dayName = new Intl.DateTimeFormat("en-US", {
+          weekday: "long",
+          timeZone: "Europe/Rome",
+        }).format(startDate);
+
+        const daySchedule = openingHours[dayName];
+        if (!daySchedule) {
+          return NextResponse.json(
+            { error: "Lo studio è chiuso in questo giorno" },
+            { status: 422 }
+          );
+        }
+
+        const toMinutes = (hhmm: string) => {
+          const [h, m] = hhmm.split(":").map(Number);
+          return h * 60 + m;
+        };
+
+        const getRomeHHMM = (date: Date) =>
+          new Intl.DateTimeFormat("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+            timeZone: "Europe/Rome",
+          }).format(date);
+
+        if (
+          toMinutes(getRomeHHMM(startDate)) < toMinutes(daySchedule.open) ||
+          toMinutes(getRomeHHMM(endDate)) > toMinutes(daySchedule.close)
+        ) {
+          return NextResponse.json(
+            { error: `Lo studio è aperto dalle ${daySchedule.open} alle ${daySchedule.close}` },
+            { status: 422 }
+          );
+        }
+      }
+    }
   }
 
   const setData: Partial<typeof appointments.$inferInsert> = {

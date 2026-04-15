@@ -200,6 +200,7 @@ export function buildTools(studio: Studio, patient: Patient) {
         endTime: string;
         dentistId: string;
         dentistName: string;
+        treatmentTypeId: string | null;
         label: string;
       }> = [];
 
@@ -286,6 +287,7 @@ export function buildTools(studio: Studio, patient: Patient) {
                 endTime: slotEndUTC.toISOString(),
                 dentistId: dentist.id,
                 dentistName: dentist.name,
+                treatmentTypeId: treatmentId ?? null,
                 label,
               });
               break; // Found a dentist, move to next time slot
@@ -316,16 +318,26 @@ export function buildTools(studio: Studio, patient: Patient) {
     parameters: jsonSchema({
       type: "object" as const,
       properties: {
-        treatmentTypeId: { type: "string", description: "ID del tipo di trattamento" },
-        startTime: { type: "string", description: "Orario inizio in formato ISO8601 UTC" },
-        endTime: { type: "string", description: "Orario fine in formato ISO8601 UTC" },
-        dentistId: { type: "string", description: "ID del dentista" },
+        treatmentTypeId: { type: "string", description: "UUID del tipo di trattamento — usa il campo 'treatmentTypeId' restituito da checkAvailability, NON il nome della prestazione" },
+        startTime: { type: "string", description: "Orario inizio in formato ISO8601 UTC — usa il campo 'startTime' restituito da checkAvailability" },
+        endTime: { type: "string", description: "Orario fine in formato ISO8601 UTC — usa il campo 'endTime' restituito da checkAvailability" },
+        dentistId: { type: "string", description: "UUID del dentista — usa il campo 'dentistId' restituito da checkAvailability" },
         notes: { type: "string", description: "Note aggiuntive del paziente" },
       },
       required: ["treatmentTypeId", "startTime", "endTime", "dentistId"],
     }),
     execute: async (args: unknown) => {
       const { treatmentTypeId, startTime, endTime, dentistId, notes } = args as { treatmentTypeId: string; startTime: string; endTime: string; dentistId: string; notes?: string };
+
+      // Validate treatmentTypeId is a UUID (not a name like "visita")
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!UUID_RE.test(treatmentTypeId)) {
+        return {
+          success: false,
+          error: `treatmentTypeId non è un UUID valido ("${treatmentTypeId}"). Chiama prima getTreatments per ottenere l'ID corretto, oppure usa il campo treatmentTypeId dello slot restituito da checkAvailability.`,
+        };
+      }
+
       // Double-check opening hours before inserting
       const startDate = new Date(startTime);
       const dayName = getRomeDayName(startDate);

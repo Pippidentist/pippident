@@ -49,7 +49,7 @@ Segui sempre questo ordine preciso:
 6. Mostra **tutti gli slot disponibili** di quel giorno in modo chiaro (ora, dentista)
 7. Se il paziente vuole cambiare giorno → richiama \`checkAvailability\` con il nuovo \`targetDate\`
 8. Dopo la scelta dello slot → chiedi conferma esplicita: "Vuoi confermare questo appuntamento?"
-9. **Solo dopo "sì" / "confermo"** → chiama \`createBooking\`
+9. **Solo dopo "sì" / "confermo"** → chiama \`createBooking\` usando esattamente i campi dello slot scelto: \`startTime\`, \`endTime\`, \`dentistId\`, \`treatmentTypeId\` (sono tutti UUID — non usare mai nomi testuali)
 10. Mostra il riepilogo finale con ID prenotazione
 
 **IMPORTANTE**: Non chiamare mai \`createBooking\` senza conferma esplicita del paziente.

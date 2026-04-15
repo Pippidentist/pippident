@@ -132,7 +132,8 @@ export function buildTools(studio: Studio, patient: Patient) {
         },
       },
     }),
-    execute: async ({ treatmentId, daysAhead = 7 }: { treatmentId?: string; daysAhead?: number }) => {
+    execute: async (args: unknown) => {
+      const { treatmentId, daysAhead = 7 } = args as { treatmentId?: string; daysAhead?: number };
       // Get treatment duration
       let durationMinutes = 30;
       let treatmentName = "Visita";
@@ -295,7 +296,8 @@ export function buildTools(studio: Studio, patient: Patient) {
       },
       required: ["treatmentTypeId", "startTime", "endTime", "dentistId"],
     }),
-    execute: async ({ treatmentTypeId, startTime, endTime, dentistId, notes }: { treatmentTypeId: string; startTime: string; endTime: string; dentistId: string; notes?: string }) => {
+    execute: async (args: unknown) => {
+      const { treatmentTypeId, startTime, endTime, dentistId, notes } = args as { treatmentTypeId: string; startTime: string; endTime: string; dentistId: string; notes?: string };
       // Double-check opening hours before inserting
       const startDate = new Date(startTime);
       const dayName = getRomeDayName(startDate);
@@ -418,7 +420,8 @@ export function buildTools(studio: Studio, patient: Patient) {
       },
       required: ["appointmentId"],
     }),
-    execute: async ({ appointmentId, reason }: { appointmentId: string; reason?: string }) => {
+    execute: async (args: unknown) => {
+      const { appointmentId, reason } = args as { appointmentId: string; reason?: string };
       // Security check: appointment must belong to this patient and studio
       const [appointment] = await db
         .select({

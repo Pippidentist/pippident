@@ -104,6 +104,19 @@ export async function PATCH(
     }
   }
 
+  // Cancellation = hard delete
+  if (parsed.data.status === "cancelled") {
+    const [deleted] = await db
+      .delete(appointments)
+      .where(and(eq(appointments.id, id), eq(appointments.studioId, studioId)))
+      .returning({ id: appointments.id });
+
+    if (!deleted) {
+      return NextResponse.json({ error: "Appuntamento non trovato" }, { status: 404 });
+    }
+    return NextResponse.json({ success: true });
+  }
+
   const setData: Partial<typeof appointments.$inferInsert> = {
     updatedAt: new Date(),
   };
@@ -139,15 +152,9 @@ export async function DELETE(
 
   const studioId = session.user.studioId;
   const { id } = await params;
-  const body = await request.json().catch(() => ({}));
 
   await db
-    .update(appointments)
-    .set({
-      status: "cancelled",
-      cancellationReason: body.reason ?? null,
-      updatedAt: new Date(),
-    })
+    .delete(appointments)
     .where(and(eq(appointments.id, id), eq(appointments.studioId, studioId)));
 
   return NextResponse.json({ success: true });

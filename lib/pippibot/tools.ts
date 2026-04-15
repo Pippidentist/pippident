@@ -465,10 +465,6 @@ export function buildTools(studio: Studio, patient: Patient) {
         };
       }
 
-      if (appointment.status === "cancelled") {
-        return { success: false, error: "L'appuntamento è già stato cancellato." };
-      }
-
       if (appointment.status === "completed") {
         return {
           success: false,
@@ -476,20 +472,21 @@ export function buildTools(studio: Studio, patient: Patient) {
         };
       }
 
-      await db
-        .update(appointments)
-        .set({
-          status: "cancelled",
-          cancellationReason: reason ?? "Cancellato dal paziente tramite Pippibot",
-          updatedAt: new Date(),
-        })
-        .where(eq(appointments.id, appointmentId));
-
       const label = format(
         new Date(appointment.startTime),
         "EEEE d MMMM 'alle' HH:mm",
         { locale: it }
       );
+
+      await db
+        .delete(appointments)
+        .where(
+          and(
+            eq(appointments.id, appointmentId),
+            eq(appointments.patientId, patientId),
+            eq(appointments.studioId, studioId)
+          )
+        );
 
       return { success: true, label };
     },

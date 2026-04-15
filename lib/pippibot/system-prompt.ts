@@ -39,21 +39,28 @@ export function buildSystemPrompt(studio: Studio, patient: Patient): string {
     settings?.emergencyHospital ?? "il Pronto Soccorso più vicino";
 
   const now = new Date();
-  const romeDate = (d: Date) =>
-    new Intl.DateTimeFormat("it-IT", {
+
+  // All date math done in Rome timezone to avoid UTC edge cases on Vercel
+  const romeLabel = (ymd: string) => {
+    // Parse YYYY-MM-DD as a noon-UTC date (avoids DST/midnight ambiguity)
+    const [y, m, d] = ymd.split("-").map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d, 12, 0));
+    return new Intl.DateTimeFormat("it-IT", {
       weekday: "long", day: "numeric", month: "long", year: "numeric",
       timeZone: "Europe/Rome",
-    }).format(d);
-  const romeYMD = (d: Date) =>
-    new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(d);
+    }).format(date);
+  };
 
-  const today = romeDate(now);
+  // Today's date as YYYY-MM-DD in Rome timezone
+  const todayYMD = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(now);
+  const today = romeLabel(todayYMD);
 
-  // Provide explicit dates for the next 7 days so the LLM doesn't miscalculate
+  // Explicit date table for next 7 days — LLM reads this instead of computing
   const nextDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(now);
-    d.setDate(d.getDate() + i + 1);
-    return `${romeDate(d)} → ${romeYMD(d)}`;
+    const [y, m, d] = todayYMD.split("-").map(Number);
+    const next = new Date(Date.UTC(y, m - 1, d + i + 1, 12, 0));
+    const nextYMD = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(next);
+    return `${romeLabel(nextYMD)} → ${nextYMD}`;
   }).join("\n");
 
   return `${KNOWLEDGE_BASE}

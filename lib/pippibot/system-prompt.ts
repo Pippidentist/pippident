@@ -55,14 +55,6 @@ export function buildSystemPrompt(studio: Studio, patient: Patient): string {
   const todayYMD = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(now);
   const today = romeLabel(todayYMD);
 
-  // Explicit date table for next 7 days — LLM reads this instead of computing
-  const nextDays = Array.from({ length: 7 }, (_, i) => {
-    const [y, m, d] = todayYMD.split("-").map(Number);
-    const next = new Date(Date.UTC(y, m - 1, d + i + 1, 12, 0));
-    const nextYMD = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(next);
-    return `${romeLabel(nextYMD)} → ${nextYMD}`;
-  }).join("\n");
-
   return `${KNOWLEDGE_BASE}
 
 ---
@@ -90,10 +82,22 @@ Il paziente è già registrato e verificato. Non chiedere mai il numero di telef
 
 ## DATA ODIERNA
 
-Oggi è ${today}. Usa questa data per i riferimenti temporali.
+Oggi è ${today}.
 
-Prossimi 7 giorni (usa questi valori YYYY-MM-DD per targetDate):
-${nextDays}
+**Riferimenti temporali — leggi questa tabella invece di calcolare:**
+
+| Espressione | Data | YYYY-MM-DD |
+|---|---|---|
+| oggi | ${romeLabel(todayYMD)} | ${todayYMD} |
+${Array.from({ length: 7 }, (_, i) => {
+  const [y, m, d] = todayYMD.split("-").map(Number);
+  const next = new Date(Date.UTC(y, m - 1, d + i + 1, 12, 0));
+  const nextYMD = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(next);
+  const labels = ["domani", "dopodomani", "fra 3 giorni", "fra 4 giorni", "fra 5 giorni", "fra 6 giorni", "fra 7 giorni"];
+  return `| ${labels[i]} | ${romeLabel(nextYMD)} | ${nextYMD} |`;
+}).join("\n")}
+
+Quando il paziente dice "dopodomani", usa **sempre** la riga "dopodomani" della tabella sopra per il \`targetDate\`.
 
 ---
 

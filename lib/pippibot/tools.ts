@@ -115,7 +115,9 @@ export function buildTools(studio: Studio, patient: Patient) {
 
   const checkAvailability = tool({
     description:
-      "Controlla gli slot disponibili nel calendario dello studio per una prestazione. Rispetta automaticamente gli orari di apertura e controlla i conflitti con appuntamenti esistenti. Restituisce massimo 10 slot.",
+      "Controlla gli slot disponibili nel calendario dello studio per una prestazione. " +
+      "Senza targetDate: restituisce i primi slot disponibili (max 10) nei prossimi giorni. " +
+      "Con targetDate (YYYY-MM-DD ora di Roma): restituisce TUTTI gli slot liberi di quel giorno specifico.",
     parameters: jsonSchema({
       type: "object" as const,
       properties: {
@@ -128,12 +130,16 @@ export function buildTools(studio: Studio, patient: Patient) {
           minimum: 1,
           maximum: 30,
           default: 7,
-          description: "Quanti giorni avanti cercare (default 7, max 30)",
+          description: "Quanti giorni avanti cercare in modalità standard (default 7, max 30). Ignorato se targetDate è specificato.",
+        },
+        targetDate: {
+          type: "string",
+          description: "Data specifica in formato YYYY-MM-DD (ora di Roma) per mostrare TUTTI gli slot di quel giorno.",
         },
       },
     }),
     execute: async (args: unknown) => {
-      const { treatmentId, daysAhead = 7 } = args as { treatmentId?: string; daysAhead?: number };
+      const { treatmentId, daysAhead = 7, targetDate } = args as { treatmentId?: string; daysAhead?: number; targetDate?: string };
       // Get treatment duration
       let durationMinutes = 30;
       let treatmentName = "Visita";
@@ -187,13 +193,26 @@ export function buildTools(studio: Studio, patient: Patient) {
       }> = [];
 
       const now = new Date();
+      const slotCap = targetDate ? Infinity : 10;
 
-      for (let dayOffset = 0; dayOffset < daysAhead && slots.length < 10; dayOffset++) {
-        // Advance by dayOffset days from tomorrow
-        const baseDate = new Date(now);
-        baseDate.setDate(baseDate.getDate() + 1 + dayOffset);
+      // Build the list of Rome date strings to iterate
+      const datesToCheck: string[] = [];
+      if (targetDate) {
+        datesToCheck.push(targetDate);
+      } else {
+        for (let i = 0; i < daysAhead; i++) {
+          const d = new Date(now);
+          d.setDate(d.getDate() + 1 + i);
+          datesToCheck.push(getRomeDateStr(d));
+        }
+      }
 
-        const romeDateStr = getRomeDateStr(baseDate);
+      for (const romeDateStr of datesToCheck) {
+        if (slots.length >= slotCap) break;
+
+        // Derive weekday from the date string
+        const [y, m, d] = romeDateStr.split("-").map(Number);
+        const baseDate = new Date(Date.UTC(y, m - 1, d, 12, 0)); // noon UTC → safe for day name
         const dayName = getRomeDayName(baseDate);
         const dayHours = openingHours[dayName];
 
@@ -206,7 +225,7 @@ export function buildTools(studio: Studio, patient: Patient) {
 
         for (
           let slotStart = openMinutes;
-          slotStart + durationMinutes <= closeMinutes && slots.length < 10;
+          slotStart + durationMinutes <= closeMinutes && slots.length < slotCap;
           slotStart += durationMinutes
         ) {
           const slotEnd = slotStart + durationMinutes;
@@ -272,9 +291,12 @@ export function buildTools(studio: Studio, patient: Patient) {
         slots,
         treatmentName,
         durationMinutes,
+        targetDate: targetDate ?? null,
         message:
           slots.length === 0
-            ? `Nessuno slot disponibile nei prossimi ${daysAhead} giorni. Prova ad aumentare il periodo di ricerca.`
+            ? targetDate
+              ? `Nessuno slot disponibile il ${targetDate}. Lo studio potrebbe essere chiuso o tutti i posti sono occupati.`
+              : `Nessuno slot disponibile nei prossimi ${daysAhead} giorni. Prova ad aumentare il periodo di ricerca.`
             : undefined,
       };
     },

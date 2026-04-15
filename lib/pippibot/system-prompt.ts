@@ -1,8 +1,7 @@
-import fs from "fs";
-import path from "path";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { Studio, Patient } from "@/lib/db/schema";
+import { KNOWLEDGE_BASE } from "./knowledge-base";
 
 function formatOpeningHours(
   openingHours: Record<string, { open: string; close: string }> | undefined
@@ -31,15 +30,7 @@ function formatOpeningHours(
   return lines.join(" | ");
 }
 
-export function buildSystemPrompt(
-  studio: Studio,
-  patient: Patient
-): string {
-  const knowledgeBase = fs.readFileSync(
-    path.join(process.cwd(), "lib/pippibot/knowledge-base.md"),
-    "utf-8"
-  );
-
+export function buildSystemPrompt(studio: Studio, patient: Patient): string {
   const settings = studio.settings as {
     openingHours?: Record<string, { open: string; close: string }>;
     emergencyHospital?: string;
@@ -51,7 +42,7 @@ export function buildSystemPrompt(
 
   const today = format(new Date(), "EEEE d MMMM yyyy", { locale: it });
 
-  return `${knowledgeBase}
+  return `${KNOWLEDGE_BASE}
 
 ---
 
@@ -82,9 +73,8 @@ Oggi è ${today}. Usa questa data per i riferimenti temporali (es. "questa setti
 
 ---
 
-## NOTA IMPORTANTE SUI TOOL
+## TOOL DISPONIBILI
 
-- Usa i tool server-side per tutte le operazioni sul database
 - \`getTreatments\` → lista prestazioni attive dello studio
 - \`checkAvailability\` → slot liberi (rispetta automaticamente gli orari dello studio)
 - \`createBooking\` → crea prenotazione IN ATTESA (mai in altro stato)

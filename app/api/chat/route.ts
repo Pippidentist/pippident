@@ -97,8 +97,8 @@ export async function POST(request: NextRequest) {
       messages: coreMessages,
       tools,
       maxSteps: 5,
-      onError: (error) => {
-        console.error("[Pippibot] streamText error:", error);
+      onError: ({ error }) => {
+        console.error("[Pippibot] streamText error:", String(error), (error as Error)?.message, (error as Error)?.cause);
       },
     });
 

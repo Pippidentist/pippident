@@ -1,5 +1,4 @@
 import { tool, jsonSchema } from "ai";
-import { z } from "zod";
 import { db } from "@/lib/db";
 import {
   appointments,
@@ -117,20 +116,23 @@ export function buildTools(studio: Studio, patient: Patient) {
   const checkAvailability = tool({
     description:
       "Controlla gli slot disponibili nel calendario dello studio per una prestazione. Rispetta automaticamente gli orari di apertura e controlla i conflitti con appuntamenti esistenti. Restituisce massimo 10 slot.",
-    parameters: z.object({
-      treatmentId: z
-        .string()
-        .optional()
-        .describe("ID del tipo di trattamento (lascia vuoto per durata predefinita 30 min)"),
-      daysAhead: z
-        .number()
-        .int()
-        .min(1)
-        .max(30)
-        .default(7)
-        .describe("Quanti giorni avanti cercare (default 7, max 30)"),
+    parameters: jsonSchema({
+      type: "object" as const,
+      properties: {
+        treatmentId: {
+          type: "string",
+          description: "ID del tipo di trattamento (lascia vuoto per durata predefinita 30 min)",
+        },
+        daysAhead: {
+          type: "integer",
+          minimum: 1,
+          maximum: 30,
+          default: 7,
+          description: "Quanti giorni avanti cercare (default 7, max 30)",
+        },
+      },
     }),
-    execute: async ({ treatmentId, daysAhead = 7 }) => {
+    execute: async ({ treatmentId, daysAhead = 7 }: { treatmentId?: string; daysAhead?: number }) => {
       // Get treatment duration
       let durationMinutes = 30;
       let treatmentName = "Visita";
@@ -282,14 +284,18 @@ export function buildTools(studio: Studio, patient: Patient) {
   const createBooking = tool({
     description:
       "Crea una prenotazione IN ATTESA per il paziente. Chiama questo tool SOLO dopo conferma esplicita del paziente (sì/confermo). Lo stato sarà sempre 'In Attesa' — lo staff dello studio lo confermerà.",
-    parameters: z.object({
-      treatmentTypeId: z.string().describe("ID del tipo di trattamento"),
-      startTime: z.string().describe("Orario inizio in formato ISO8601 UTC"),
-      endTime: z.string().describe("Orario fine in formato ISO8601 UTC"),
-      dentistId: z.string().describe("ID del dentista"),
-      notes: z.string().optional().describe("Note aggiuntive del paziente"),
+    parameters: jsonSchema({
+      type: "object" as const,
+      properties: {
+        treatmentTypeId: { type: "string", description: "ID del tipo di trattamento" },
+        startTime: { type: "string", description: "Orario inizio in formato ISO8601 UTC" },
+        endTime: { type: "string", description: "Orario fine in formato ISO8601 UTC" },
+        dentistId: { type: "string", description: "ID del dentista" },
+        notes: { type: "string", description: "Note aggiuntive del paziente" },
+      },
+      required: ["treatmentTypeId", "startTime", "endTime", "dentistId"],
     }),
-    execute: async ({ treatmentTypeId, startTime, endTime, dentistId, notes }) => {
+    execute: async ({ treatmentTypeId, startTime, endTime, dentistId, notes }: { treatmentTypeId: string; startTime: string; endTime: string; dentistId: string; notes?: string }) => {
       // Double-check opening hours before inserting
       const startDate = new Date(startTime);
       const dayName = getRomeDayName(startDate);
@@ -404,11 +410,15 @@ export function buildTools(studio: Studio, patient: Patient) {
   const cancelBooking = tool({
     description:
       "Cancella un appuntamento del paziente. Verifica che l'appuntamento appartenga al paziente corrente prima di cancellarlo.",
-    parameters: z.object({
-      appointmentId: z.string().describe("ID dell'appuntamento da cancellare"),
-      reason: z.string().optional().describe("Motivo della cancellazione (opzionale)"),
+    parameters: jsonSchema({
+      type: "object" as const,
+      properties: {
+        appointmentId: { type: "string", description: "ID dell'appuntamento da cancellare" },
+        reason: { type: "string", description: "Motivo della cancellazione (opzionale)" },
+      },
+      required: ["appointmentId"],
     }),
-    execute: async ({ appointmentId, reason }) => {
+    execute: async ({ appointmentId, reason }: { appointmentId: string; reason?: string }) => {
       // Security check: appointment must belong to this patient and studio
       const [appointment] = await db
         .select({

@@ -1,4 +1,4 @@
-import { tool } from "ai";
+import { tool, jsonSchema } from "ai";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import {
@@ -92,7 +92,7 @@ export function buildTools(studio: Studio, patient: Patient) {
   const getTreatments = tool({
     description:
       "Recupera la lista delle prestazioni dentistiche disponibili nello studio. Usa questo tool quando il paziente vuole sapere cosa offre lo studio o per trovare il tipo di cura giusto.",
-    parameters: z.object({}),
+    parameters: jsonSchema({ type: "object" as const, properties: {} }),
     execute: async () => {
       const treatments = await db
         .select({
@@ -468,7 +468,7 @@ export function buildTools(studio: Studio, patient: Patient) {
   const getMyAppointments = tool({
     description:
       "Recupera i prossimi appuntamenti del paziente (futuri, non cancellati). Usa questo tool quando il paziente vuole vedere i suoi appuntamenti o vuole cancellarne uno.",
-    parameters: z.object({}),
+    parameters: jsonSchema({ type: "object" as const, properties: {} }),
     execute: async () => {
       const now = new Date();
 

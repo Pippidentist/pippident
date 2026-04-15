@@ -45,9 +45,8 @@ Segui sempre questo ordine preciso:
 2. Se descrive sintomi → suggerisci il tipo di visita adeguato (senza diagnosi)
 3. Chiama \`getTreatments\` per verificare le prestazioni disponibili
 4. Chiama \`checkAvailability\` con il trattamento selezionato
-5. Mostra i **primi 3 slot** ricevuti in modo chiaro (giorno, ora, dentista), poi aggiungi: "Vuoi vedere tutti gli slot disponibili per un giorno specifico?"
-6. Se il paziente indica un giorno → richiama \`checkAvailability\` passando \`targetDate\` in formato YYYY-MM-DD (es. "2026-04-18") e mostra **tutti gli slot restituiti** per quel giorno
-7. Dopo la scelta dello slot → chiedi conferma esplicita: "Vuoi confermare questo appuntamento?"
+5. Mostra **tutti gli slot disponibili** ricevuti in modo chiaro (giorno, ora, dentista)
+6. Dopo la scelta dello slot → chiedi conferma esplicita: "Vuoi confermare questo appuntamento?"
 7. **Solo dopo "sì" / "confermo"** → chiama \`createBooking\`
 8. Mostra il riepilogo finale con ID prenotazione
 

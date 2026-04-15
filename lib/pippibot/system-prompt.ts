@@ -1,5 +1,3 @@
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
 import type { Studio, Patient } from "@/lib/db/schema";
 import { KNOWLEDGE_BASE } from "./knowledge-base";
 
@@ -40,7 +38,23 @@ export function buildSystemPrompt(studio: Studio, patient: Patient): string {
   const emergencyHospital =
     settings?.emergencyHospital ?? "il Pronto Soccorso più vicino";
 
-  const today = format(new Date(), "EEEE d MMMM yyyy", { locale: it });
+  const now = new Date();
+  const romeDate = (d: Date) =>
+    new Intl.DateTimeFormat("it-IT", {
+      weekday: "long", day: "numeric", month: "long", year: "numeric",
+      timeZone: "Europe/Rome",
+    }).format(d);
+  const romeYMD = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(d);
+
+  const today = romeDate(now);
+
+  // Provide explicit dates for the next 7 days so the LLM doesn't miscalculate
+  const nextDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() + i + 1);
+    return `${romeDate(d)} → ${romeYMD(d)}`;
+  }).join("\n");
 
   return `${KNOWLEDGE_BASE}
 
@@ -69,7 +83,10 @@ Il paziente è già registrato e verificato. Non chiedere mai il numero di telef
 
 ## DATA ODIERNA
 
-Oggi è ${today}. Usa questa data per i riferimenti temporali (es. "questa settimana", "domani", "lunedì prossimo").
+Oggi è ${today}. Usa questa data per i riferimenti temporali.
+
+Prossimi 7 giorni (usa questi valori YYYY-MM-DD per targetDate):
+${nextDays}
 
 ---
 

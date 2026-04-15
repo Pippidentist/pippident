@@ -8,9 +8,20 @@ import {
   studios,
 } from "@/lib/db/schema";
 import { eq, and, gte, lte, or, sql } from "drizzle-orm";
-import { format } from "date-fns";
-import { it } from "date-fns/locale";
 import type { Studio, Patient } from "@/lib/db/schema";
+
+/** Formats a UTC Date as Italian label in Europe/Rome timezone (timezone-safe on Vercel) */
+function formatRomeLabel(date: Date): string {
+  return new Intl.DateTimeFormat("it-IT", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Europe/Rome",
+  }).format(date).replace(",", " alle");
+}
 
 // ── Timezone helpers ─────────────────────────────────────────────────────────
 
@@ -268,9 +279,7 @@ export function buildTools(studio: Studio, patient: Patient) {
               .limit(1);
 
             if (conflicts.length === 0) {
-              const label = format(slotStartUTC, "EEEE d MMMM 'alle' HH:mm", {
-                locale: it,
-              });
+              const label = formatRomeLabel(slotStartUTC);
 
               slots.push({
                 startTime: slotStartUTC.toISOString(),
@@ -409,11 +418,7 @@ export function buildTools(studio: Studio, patient: Patient) {
           status: appointments.status,
         });
 
-      const appointmentLabel = format(
-        new Date(startTime),
-        "EEEE d MMMM 'alle' HH:mm",
-        { locale: it }
-      );
+      const appointmentLabel = formatRomeLabel(new Date(startTime));
 
       return {
         success: true,
@@ -472,11 +477,7 @@ export function buildTools(studio: Studio, patient: Patient) {
         };
       }
 
-      const label = format(
-        new Date(appointment.startTime),
-        "EEEE d MMMM 'alle' HH:mm",
-        { locale: it }
-      );
+      const label = formatRomeLabel(new Date(appointment.startTime));
 
       await db
         .delete(appointments)
@@ -527,9 +528,7 @@ export function buildTools(studio: Studio, patient: Patient) {
 
       const formatted = upcomingAppointments.map((a) => ({
         id: a.id,
-        label: format(new Date(a.startTime), "EEEE d MMMM 'alle' HH:mm", {
-          locale: it,
-        }),
+        label: formatRomeLabel(new Date(a.startTime)),
         treatment: a.treatmentName ?? "Visita",
         dentist: a.dentistName ?? "Dentista",
         status:

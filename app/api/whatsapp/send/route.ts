@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   const body = buildRecallMessage(patientName, recall.recallType, dueDateFormatted);
 
   try {
-    const waMessageId = await sendWhatsAppMessage(recall.patientPhone, body);
+    const waMessageId = await sendWhatsAppMessage(recall.patientPhone, body, undefined);
 
     // Log message
     await db.insert(whatsappMessages).values({

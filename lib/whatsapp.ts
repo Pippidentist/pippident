@@ -1,28 +1,26 @@
-import twilio from "twilio";
+import { sendMetaWhatsAppMessage } from "@/lib/meta-whatsapp";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const defaultFrom = process.env.TWILIO_WHATSAPP_FROM ?? "whatsapp:+14155238886";
+/**
+ * Sends a WhatsApp message via Meta Cloud API.
+ * @param to - recipient phone number (any format: "+393...", "393...", etc.)
+ * @param body - message text
+ * @param phoneNumberId - Meta phone number ID (defaults to META_PHONE_NUMBER_ID env var)
+ */
+export async function sendWhatsAppMessage(
+  to: string,
+  body: string,
+  phoneNumberId?: string
+): Promise<string> {
+  const pid = phoneNumberId ?? process.env.META_PHONE_NUMBER_ID ?? "";
+  const token = process.env.META_WHATSAPP_TOKEN ?? "";
 
-function getClient() {
-  if (!accountSid || !authToken) {
-    throw new Error("TWILIO_ACCOUNT_SID e TWILIO_AUTH_TOKEN sono richiesti");
+  if (!pid || !token) {
+    throw new Error("META_PHONE_NUMBER_ID e META_WHATSAPP_TOKEN sono richiesti");
   }
-  return twilio(accountSid, authToken);
-}
 
-export function getTwilioAuthToken(): string {
-  return authToken ?? "";
-}
-
-export async function sendWhatsAppMessage(to: string, body: string, from?: string): Promise<string> {
-  const client = getClient();
-  const normalizedTo = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
-  const sender = from ?? defaultFrom;
-  const message = await client.messages.create({ from: sender, to: normalizedTo, body });
-  return message.sid;
+  return sendMetaWhatsAppMessage(to, body, pid, token);
 }
 
 // ── Message builders ──────────────────────────────────────────────────────────
@@ -39,19 +37,7 @@ export function buildWelcomeMessage(patientName: string, studioName: string): st
   return (
     `Benvenuto/a da ${studioName}! 🦷\n\n` +
     `Ciao ${patientName}, il suo profilo è stato registrato nel nostro sistema.\n\n` +
-    `Da qui può:\n` +
-    `📅 *APPUNTAMENTI* – vedere i prossimi appuntamenti\n` +
-    `❌ *ANNULLA* – cancellare un appuntamento\n` +
-    `ℹ️ *AIUTO* – mostrare questo menu`
-  );
-}
-
-export function buildHelpMenu(patientName: string): string {
-  return (
-    `Ciao ${patientName}! Come posso aiutarti?\n\n` +
-    `📅 *APPUNTAMENTI* – vedere i prossimi appuntamenti\n` +
-    `❌ *ANNULLA* – cancellare un appuntamento\n` +
-    `ℹ️ *AIUTO* – mostrare questo menu`
+    `Da qui può prenotare e gestire i suoi appuntamenti direttamente su WhatsApp.`
   );
 }
 
@@ -60,44 +46,6 @@ export interface AppointmentEntry {
   startTime: Date;
   treatmentName: string | null;
   dentistName: string | null;
-}
-
-export function buildAppointmentListMessage(appointments: AppointmentEntry[]): string {
-  if (appointments.length === 0) {
-    return "Non ha nessun appuntamento programmato nei prossimi 60 giorni.";
-  }
-  const lines = appointments.map((a, i) => {
-    const dateStr = format(a.startTime, "EEEE d MMMM 'alle' HH:mm", { locale: it });
-    const treatment = a.treatmentName ?? "Visita";
-    const dentist = a.dentistName ? ` con ${a.dentistName}` : "";
-    return `${i + 1}. ${dateStr} – ${treatment}${dentist}`;
-  });
-  return (
-    `📅 *I suoi prossimi appuntamenti:*\n\n` +
-    lines.join("\n") +
-    `\n\nPer cancellare, risponda *ANNULLA*.`
-  );
-}
-
-export function buildCancellationListMessage(appointments: AppointmentEntry[]): string {
-  if (appointments.length === 0) {
-    return "Non ha nessun appuntamento futuro da cancellare.";
-  }
-  const lines = appointments.map((a, i) => {
-    const dateStr = format(a.startTime, "EEEE d MMMM 'alle' HH:mm", { locale: it });
-    const treatment = a.treatmentName ?? "Visita";
-    return `${i + 1}. ${dateStr} – ${treatment}`;
-  });
-  return (
-    `Quale appuntamento vuole cancellare?\n\n` +
-    lines.join("\n") +
-    `\n\nRisponda con il numero (es. *1*) oppure *MENU* per annullare.`
-  );
-}
-
-export function buildCancellationConfirmMessage(startTime: Date): string {
-  const dateStr = format(startTime, "EEEE d MMMM 'alle' HH:mm", { locale: it });
-  return `✅ Appuntamento di ${dateStr} cancellato con successo.`;
 }
 
 export function buildReminderMessage(
@@ -117,7 +65,7 @@ export function buildReminderMessage(
       `Gentile ${patientName}, le ricordiamo che *domani* ha un appuntamento presso ${studioName}.\n\n` +
       `🗓 ${dateStr}\n` +
       `🦷 ${treatment}${dentist}\n\n` +
-      `Per cancellare risponda *ANNULLA*.`
+      `Per cancellare risponda alla chat.`
     );
   }
   return (
@@ -128,17 +76,3 @@ export function buildReminderMessage(
   );
 }
 
-export function buildRegistrationPromptName(studioName: string): string {
-  return (
-    `Benvenuto/a da ${studioName}! 🦷\n\n` +
-    `Non ho trovato il suo profilo. Vuole registrarsi?\n\n` +
-    `Per iniziare, mi scriva il suo *nome e cognome* (es: Mario Rossi).`
-  );
-}
-
-export function buildRegistrationConfirmMessage(firstName: string, lastName: string): string {
-  return (
-    `Ho capito: *${firstName} ${lastName}*. È corretto?\n\n` +
-    `Risponda *SI* per confermare o *NO* per ricominciare.`
-  );
-}

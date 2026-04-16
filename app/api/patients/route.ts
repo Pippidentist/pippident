@@ -118,18 +118,18 @@ export async function POST(request: NextRequest) {
     })
     .returning();
 
-  // Send WhatsApp welcome message if studio has a Twilio number configured
+  // Send WhatsApp welcome message if studio has Meta WhatsApp configured
   const [studio] = await db
-    .select({ name: studios.name, twilioPhoneFrom: studios.twilioPhoneFrom })
+    .select({ name: studios.name, whatsappPhoneNumberId: studios.whatsappPhoneNumberId })
     .from(studios)
     .where(eq(studios.id, studioId))
     .limit(1);
 
-  if (studio?.twilioPhoneFrom) {
+  if (studio?.whatsappPhoneNumberId) {
     sendWhatsAppMessage(
       data.phone,
       buildWelcomeMessage(`${data.firstName} ${data.lastName}`, studio.name),
-      studio.twilioPhoneFrom
+      studio.whatsappPhoneNumberId
     ).catch((err) => console.error("[WhatsApp welcome]", err));
   }
 

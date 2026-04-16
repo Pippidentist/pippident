@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       patientLastName: patients.lastName,
       patientId: patients.id,
       studioName: studios.name,
-      studioTwilioPhone: studios.twilioPhoneFrom,
+      studioWhatsappId: studios.whatsappPhoneNumberId,
       dentistName: users.fullName,
       treatmentName: treatmentTypes.name,
     })
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     .where(
       and(
         eq(appointments.status, "confirmed"),
-        isNotNull(studios.twilioPhoneFrom),
+        isNotNull(studios.whatsappPhoneNumberId),
         isNotNull(patients.phone)
       )
     );
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     appt: typeof rows[0],
     hoursAhead: 48 | 2
   ) {
-    if (!appt.patientPhone || !appt.studioTwilioPhone) return;
+    if (!appt.patientPhone || !appt.studioWhatsappId) return;
     const patientName = `${appt.patientFirstName} ${appt.patientLastName}`;
     const body = buildReminderMessage(
       patientName,
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       hoursAhead
     );
     try {
-      const sid = await sendWhatsAppMessage(appt.patientPhone, body, appt.studioTwilioPhone);
+      const sid = await sendWhatsAppMessage(appt.patientPhone, body, appt.studioWhatsappId ?? undefined);
       if (hoursAhead === 48) {
         await db
           .update(appointments)

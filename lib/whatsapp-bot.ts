@@ -1,6 +1,11 @@
 import { db } from "@/lib/db";
 import { studios, patients, whatsappMessages } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
+
+/** Strips all non-digit chars from a phone number for loose comparison */
+function digitsOnly(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
 
 /**
  * Handles all incoming WhatsApp messages.
@@ -32,18 +37,28 @@ export async function handleIncomingMessage(params: {
     return "Servizio non disponibile al momento.";
   }
 
-  // 2. Look up patient by phone
-  const [patient] = await db
-    .select({ id: patients.id, firstName: patients.firstName })
+  // 2. Look up patient by phone — normalize both sides to digits only for comparison
+  // Handles: "+393483774452" == "3483774452" == "+39 348 377 4452" etc.
+  const fromDigits = digitsOnly(fromPhone);
+
+  const allPatients = await db
+    .select({ id: patients.id, firstName: patients.firstName, phone: patients.phone })
     .from(patients)
     .where(
       and(
         eq(patients.studioId, studio.id),
-        eq(patients.phone, fromPhone),
         eq(patients.isArchived, false)
       )
-    )
-    .limit(1);
+    );
+
+  // Match by comparing trailing digits (handles +39 prefix differences)
+  const patient = allPatients.find((p) => {
+    const pDigits = digitsOnly(p.phone);
+    // Full match or match after stripping country prefix (39)
+    return pDigits === fromDigits ||
+      pDigits === fromDigits.replace(/^39/, "") ||
+      fromDigits === pDigits.replace(/^39/, "");
+  });
 
   // 3. Log inbound message
   await db.insert(whatsappMessages).values({

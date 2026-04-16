@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import twilio from "twilio";
 import { handleIncomingMessage } from "@/lib/whatsapp-bot";
-import { getTwilioAuthToken } from "@/lib/whatsapp";
+import { getTwilioAuthToken, sendWhatsAppMessage } from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
 
-function buildTwimlResponse(message: string): string {
-  // Escape XML special chars
-  const escaped = message
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escaped}</Message></Response>`;
-}
+const EMPTY_TWIML = `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`;
 
 export async function POST(req: NextRequest) {
   const authToken = getTwilioAuthToken();
@@ -55,11 +48,20 @@ export async function POST(req: NextRequest) {
     replyText = await handleIncomingMessage({ fromPhone, toPhone, body, waMessageId: messageSid });
     console.log("[WA webhook] Reply:", replyText.substring(0, 100));
   } catch (err) {
-    console.error("[WhatsApp webhook]", err);
+    console.error("[WhatsApp webhook] handleIncomingMessage error:", err);
     replyText = "Si è verificato un errore. Riprova tra qualche minuto.";
   }
 
-  return new NextResponse(buildTwimlResponse(replyText), {
+  // Send reply via REST API (more reliable than TwiML for sandbox delivery)
+  try {
+    const sid = await sendWhatsAppMessage(fromRaw, replyText, toRaw);
+    console.log("[WA webhook] Message sent via REST API, SID:", sid);
+  } catch (err) {
+    console.error("[WA webhook] Failed to send via REST API:", err);
+  }
+
+  // Return empty TwiML so Twilio doesn't also try to send the message
+  return new NextResponse(EMPTY_TWIML, {
     status: 200,
     headers: { "Content-Type": "text/xml" },
   });

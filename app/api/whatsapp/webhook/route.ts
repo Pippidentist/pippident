@@ -1,68 +1,85 @@
 import { NextRequest, NextResponse } from "next/server";
-import twilio from "twilio";
 import { handleIncomingMessage } from "@/lib/whatsapp-bot";
-import { getTwilioAuthToken, sendWhatsAppMessage } from "@/lib/whatsapp";
+import { sendMetaWhatsAppMessage, markMetaMessageRead } from "@/lib/meta-whatsapp";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
-const EMPTY_TWIML = `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`;
+// ── GET — Meta webhook verification ─────────────────────────────────────────
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const mode = searchParams.get("hub.mode");
+  const token = searchParams.get("hub.verify_token");
+  const challenge = searchParams.get("hub.challenge");
+
+  const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN;
+
+  if (mode === "subscribe" && token === verifyToken) {
+    console.log("[Meta webhook] Webhook verified");
+    return new NextResponse(challenge, { status: 200 });
+  }
+
+  console.error("[Meta webhook] Verification failed. token:", token, "expected:", verifyToken);
+  return new NextResponse("Forbidden", { status: 403 });
+}
+
+// ── POST — Incoming messages ──────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  const authToken = getTwilioAuthToken();
-
-  // Parse form-urlencoded body from Twilio
-  const text = await req.text();
-  const params = Object.fromEntries(new URLSearchParams(text));
-
-  // Validate Twilio signature
-  const signature = req.headers.get("x-twilio-signature") ?? "";
-  const host = req.headers.get("host") ?? "";
-  const urlFromHost = `https://${host}/api/whatsapp/webhook`;
-  const urlFromEnv = process.env.NEXTAUTH_URL
-    ? `${process.env.NEXTAUTH_URL}/api/whatsapp/webhook`
-    : urlFromHost;
-
-  const validFromHost = authToken ? twilio.validateRequest(authToken, signature, urlFromHost, params) : true;
-  const validFromEnv  = authToken ? twilio.validateRequest(authToken, signature, urlFromEnv, params) : true;
-
-  console.log("[WA webhook] host:", host, "validFromHost:", validFromHost, "validFromEnv:", validFromEnv);
-
-  if (authToken && !validFromHost && !validFromEnv) {
-    console.error("[WA webhook] Signature validation failed. URL host:", urlFromHost, "URL env:", urlFromEnv);
-    return new NextResponse("Firma non valida", { status: 403 });
-  }
-
-  const fromRaw: string = params["From"] ?? "";
-  const toRaw: string = params["To"] ?? "";
-  const body: string = params["Body"] ?? "";
-  const messageSid: string = params["MessageSid"] ?? "";
-
-  console.log("[WA webhook] From:", fromRaw, "To:", toRaw, "Body:", body, "SID:", messageSid);
-
-  // Normalize phone: strip "whatsapp:" prefix
-  const fromPhone = fromRaw.replace(/^whatsapp:/, "");
-  const toPhone = toRaw; // keep full format e.g. "whatsapp:+14155238886"
-
-  let replyText: string;
+  let body: unknown;
   try {
-    replyText = await handleIncomingMessage({ fromPhone, toPhone, body, waMessageId: messageSid });
-    console.log("[WA webhook] Reply:", replyText.substring(0, 100));
-  } catch (err) {
-    console.error("[WhatsApp webhook] handleIncomingMessage error:", err);
-    replyText = "Si è verificato un errore. Riprova tra qualche minuto.";
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ status: "ok" });
   }
 
-  // Send reply via REST API (more reliable than TwiML for sandbox delivery)
   try {
-    const sid = await sendWhatsAppMessage(fromRaw, replyText, toRaw);
-    console.log("[WA webhook] Message sent via REST API, SID:", sid);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const payload = body as any;
+    const change = payload?.entry?.[0]?.changes?.[0]?.value;
+
+    if (!change?.messages?.length) {
+      // Status update or other notification — not a user message
+      return NextResponse.json({ status: "ok" });
+    }
+
+    const message = change.messages[0];
+
+    // Only handle text messages (ignore images, audio, etc.)
+    if (message.type !== "text") {
+      return NextResponse.json({ status: "ok" });
+    }
+
+    const fromPhone = `+${message.from as string}`; // Meta sends digits without +
+    const phoneNumberId = change.metadata.phone_number_id as string;
+    const messageBody = message.text.body as string;
+    const waMessageId = message.id as string;
+    const accessToken = process.env.META_WHATSAPP_TOKEN ?? "";
+
+    console.log("[Meta webhook] From:", fromPhone, "PhoneNumberId:", phoneNumberId, "Body:", messageBody, "SID:", waMessageId);
+
+    // Mark message as read (shows double blue tick to user)
+    await markMetaMessageRead(waMessageId, phoneNumberId, accessToken);
+
+    // Process and get reply
+    const replyText = await handleIncomingMessage({
+      fromPhone,
+      phoneNumberId,
+      body: messageBody,
+      waMessageId,
+    });
+
+    console.log("[Meta webhook] Reply:", replyText.substring(0, 100));
+
+    // Send reply via Meta REST API
+    const outboundId = await sendMetaWhatsAppMessage(fromPhone, replyText, phoneNumberId, accessToken);
+    console.log("[Meta webhook] Reply sent, ID:", outboundId);
+
   } catch (err) {
-    console.error("[WA webhook] Failed to send via REST API:", err);
+    console.error("[Meta webhook] Error:", err);
   }
 
-  // Return empty TwiML so Twilio doesn't also try to send the message
-  return new NextResponse(EMPTY_TWIML, {
-    status: 200,
-    headers: { "Content-Type": "text/xml" },
-  });
+  // Always return 200 so Meta doesn't retry
+  return NextResponse.json({ status: "ok" });
 }

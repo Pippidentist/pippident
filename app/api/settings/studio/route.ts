@@ -14,6 +14,8 @@ const updateSchema = z.object({
   address: z.string().optional(),
   vatNumber: z.string().optional(),
   twilioPhoneFrom: z.string().optional().nullable(),
+  whatsappPhoneNumberId: z.string().optional().nullable(),
+  whatsappToken: z.string().optional().nullable(),
   openingHours: z
     .record(z.string(), z.object({ open: z.string(), close: z.string() }))
     .optional(),
@@ -42,6 +44,11 @@ export async function PATCH(request: NextRequest) {
   // Normalize twilioPhoneFrom: always store with "whatsapp:" prefix
   if (studioFields.twilioPhoneFrom && !studioFields.twilioPhoneFrom.startsWith("whatsapp:")) {
     studioFields.twilioPhoneFrom = `whatsapp:${studioFields.twilioPhoneFrom}`;
+  }
+
+  // Strip accidental spaces from Meta IDs/tokens
+  if (studioFields.whatsappPhoneNumberId) {
+    studioFields.whatsappPhoneNumberId = studioFields.whatsappPhoneNumberId.trim();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

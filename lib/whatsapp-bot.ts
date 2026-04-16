@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { studios, patients, whatsappMessages } from "@/lib/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 /** Strips all non-digit chars from a phone number for loose comparison */
 function digitsOnly(phone: string): string {
@@ -8,36 +8,35 @@ function digitsOnly(phone: string): string {
 }
 
 /**
- * Handles all incoming WhatsApp messages.
+ * Handles all incoming WhatsApp messages (Meta Cloud API).
  *
  * Routing logic:
  *  - Unknown patient  → link to registration page
  *  - Known patient    → link to Pippibot chat
- *
- * All other conversation happens inside Pippibot (/chat).
  */
 export async function handleIncomingMessage(params: {
-  fromPhone: string; // normalized: "+393331234567"
-  toPhone: string;   // studio's Twilio number: "whatsapp:+14155238886"
+  fromPhone: string;    // normalized: "+393331234567"
+  phoneNumberId: string; // Meta phone number ID of the studio's number
   body: string;
   waMessageId: string;
 }): Promise<string> {
-  const { fromPhone, toPhone, body, waMessageId } = params;
+  const { fromPhone, phoneNumberId, body, waMessageId } = params;
 
   const baseUrl = process.env.NEXTAUTH_URL ?? "https://pippident.vercel.app";
 
-  // 1. Identify studio by its Twilio number
+  // 1. Identify studio by its Meta phone number ID
   const [studio] = await db
     .select({ id: studios.id, name: studios.name })
     .from(studios)
-    .where(eq(studios.twilioPhoneFrom, toPhone))
+    .where(eq(studios.whatsappPhoneNumberId, phoneNumberId))
     .limit(1);
 
   if (!studio) {
+    console.error("[whatsapp-bot] No studio found for phoneNumberId:", phoneNumberId);
     return "Servizio non disponibile al momento.";
   }
 
-  // 2. Look up patient by phone — normalize both sides to digits only for comparison
+  // 2. Look up patient by phone — normalize both sides to digits only
   // Handles: "+393483774452" == "3483774452" == "+39 348 377 4452" etc.
   const fromDigits = digitsOnly(fromPhone);
 
@@ -54,10 +53,11 @@ export async function handleIncomingMessage(params: {
   // Match by comparing trailing digits (handles +39 prefix differences)
   const patient = allPatients.find((p) => {
     const pDigits = digitsOnly(p.phone);
-    // Full match or match after stripping country prefix (39)
-    return pDigits === fromDigits ||
+    return (
+      pDigits === fromDigits ||
       pDigits === fromDigits.replace(/^39/, "") ||
-      fromDigits === pDigits.replace(/^39/, "");
+      fromDigits === pDigits.replace(/^39/, "")
+    );
   });
 
   // 3. Log inbound message

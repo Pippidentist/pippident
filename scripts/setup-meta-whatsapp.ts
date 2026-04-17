@@ -3,7 +3,7 @@
  * Run with: npx tsx scripts/setup-meta-whatsapp.ts
  */
 import * as dotenv from "dotenv";
-dotenv.config({ path: ".env.local" });
+dotenv.config({ path: `${__dirname}/../.env.local` });
 
 import { db } from "../lib/db";
 import { studios } from "../lib/db/schema";

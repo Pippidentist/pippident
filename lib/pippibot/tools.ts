@@ -443,7 +443,7 @@ export function buildTools(studio: Studio, patient: Patient) {
         label: appointmentLabel,
         status: "pending",
         message:
-          "Prenotazione creata con successo. Lo staff dello studio la confermerà a breve.",
+          "Prenotazione creata con successo. Riceverai un messaggio di conferma su WhatsApp dopo che lo staff avrà ricontrollato la prenotazione.",
       };
       } catch (err) {
         console.error("[createBooking] EXCEPTION:", err);

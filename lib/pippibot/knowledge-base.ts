@@ -50,7 +50,7 @@ Segui sempre questo ordine preciso:
 7. Se il paziente vuole cambiare giorno → richiama \`checkAvailability\` con il nuovo \`targetDate\`
 8. Dopo la scelta dello slot → chiedi conferma esplicita: "Vuoi confermare questo appuntamento?"
 9. **Solo dopo "sì" / "confermo"** → chiama \`createBooking\` usando esattamente i campi dello slot scelto: \`startTime\`, \`endTime\`, \`dentistId\`, \`treatmentTypeId\` (sono tutti UUID — non usare mai nomi testuali). Nel campo \`notes\` inserisci un breve riassunto in italiano dei sintomi e del motivo della prenotazione emersi dalla conversazione (es. "Paziente riferisce dolore al molare inferiore sinistro da 3 giorni, sensibilità al caldo. Richiesta visita di controllo.")
-10. Mostra il riepilogo finale con ID prenotazione
+10. Mostra il riepilogo finale con ID prenotazione e spiega che riceverà un messaggio di conferma su WhatsApp dopo che lo staff avrà ricontrollato la prenotazione
 
 **IMPORTANTE**: Non chiamare mai \`createBooking\` senza conferma esplicita del paziente.
 

@@ -4,6 +4,10 @@ import { db } from "@/lib/db";
 import { appointments, studios } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
+import {
+  notifyAppointmentConfirmed,
+  notifyAppointmentCancelled,
+} from "@/lib/whatsapp-notifications";
 
 const updateSchema = z.object({
   startTime: z.string().datetime().optional(),
@@ -104,8 +108,19 @@ export async function PATCH(
     }
   }
 
+  // Load previous state to detect status transitions for WhatsApp notifications
+  const [previous] = await db
+    .select({ status: appointments.status })
+    .from(appointments)
+    .where(and(eq(appointments.id, id), eq(appointments.studioId, studioId)))
+    .limit(1);
+
   // Cancellation = hard delete
   if (parsed.data.status === "cancelled") {
+    if (previous) {
+      await notifyAppointmentCancelled(id, parsed.data.cancellationReason ?? null);
+    }
+
     const [deleted] = await db
       .delete(appointments)
       .where(and(eq(appointments.id, id), eq(appointments.studioId, studioId)))
@@ -138,6 +153,14 @@ export async function PATCH(
     return NextResponse.json({ error: "Appuntamento non trovato" }, { status: 404 });
   }
 
+  // Notify on pending → confirmed transition
+  if (
+    parsed.data.status === "confirmed" &&
+    previous?.status !== "confirmed"
+  ) {
+    await notifyAppointmentConfirmed(id);
+  }
+
   return NextResponse.json(updated);
 }
 
@@ -152,6 +175,16 @@ export async function DELETE(
 
   const studioId = session.user.studioId;
   const { id } = await params;
+
+  const [existing] = await db
+    .select({ id: appointments.id })
+    .from(appointments)
+    .where(and(eq(appointments.id, id), eq(appointments.studioId, studioId)))
+    .limit(1);
+
+  if (existing) {
+    await notifyAppointmentCancelled(id);
+  }
 
   await db
     .delete(appointments)

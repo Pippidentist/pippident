@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { appointments, patients, users, treatmentTypes, studios } from "@/lib/db/schema";
 import { eq, and, gte, lte, or, sql } from "drizzle-orm";
 import { z } from "zod";
+import { notifyAppointmentConfirmed } from "@/lib/whatsapp-notifications";
 
 const createAppointmentSchema = z.object({
   patientId: z.string().uuid(),
@@ -180,6 +181,10 @@ export async function POST(request: NextRequest) {
       createdBy: session.user.id,
     })
     .returning();
+
+  if (appointment.status === "confirmed") {
+    await notifyAppointmentConfirmed(appointment.id);
+  }
 
   return NextResponse.json(appointment, { status: 201 });
 }

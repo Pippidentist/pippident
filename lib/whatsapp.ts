@@ -33,6 +33,58 @@ export function buildRecallMessage(patientName: string, recallType: string, dueD
   );
 }
 
+export function buildRecallReminderMessage(
+  patientName: string,
+  recallType: string,
+  dueDate: Date,
+  studioName: string,
+  daysBefore: 30 | 14
+): string {
+  const dateStr = format(dueDate, "EEEE d MMMM", { locale: it });
+  if (daysBefore === 30) {
+    return (
+      `Gentile ${patientName}, tra circa *un mese* (${dateStr}) è prevista la sua visita di *${recallType}* presso ${studioName}.\n\n` +
+      `Per prenotare l'appuntamento risponda a questo messaggio. A presto! 🦷`
+    );
+  }
+  return (
+    `Gentile ${patientName}, le ricordiamo che tra *due settimane* (${dateStr}) è prevista la sua visita di *${recallType}* presso ${studioName}.\n\n` +
+    `Se non ha ancora prenotato, risponda a questo messaggio per fissare un orario.`
+  );
+}
+
+export function buildAppointmentConfirmedMessage(
+  patientName: string,
+  studioName: string,
+  startTime: Date,
+  treatmentName: string | null,
+  dentistName: string | null
+): string {
+  const dateStr = format(startTime, "EEEE d MMMM 'alle' HH:mm", { locale: it });
+  const treatment = treatmentName ?? "Visita";
+  const dentist = dentistName ? `\n👨‍⚕️ ${dentistName}` : "";
+  return (
+    `Gentile ${patientName}, il suo appuntamento presso ${studioName} è stato *confermato* ✅\n\n` +
+    `🗓 ${dateStr}\n` +
+    `🦷 ${treatment}${dentist}\n\n` +
+    `La aspettiamo! Per cancellare o modificare risponda a questo messaggio.`
+  );
+}
+
+export function buildAppointmentCancelledMessage(
+  patientName: string,
+  studioName: string,
+  startTime: Date,
+  reason?: string | null
+): string {
+  const dateStr = format(startTime, "EEEE d MMMM 'alle' HH:mm", { locale: it });
+  const reasonLine = reason ? `\n\n_Motivo: ${reason}_` : "";
+  return (
+    `Gentile ${patientName}, l'appuntamento presso ${studioName} del *${dateStr}* è stato *cancellato*.${reasonLine}\n\n` +
+    `Per prenotare una nuova visita risponda a questo messaggio.`
+  );
+}
+
 export function buildWelcomeMessage(patientName: string, studioName: string): string {
   return (
     `Benvenuto/a da ${studioName}! 🦷\n\n` +
@@ -54,13 +106,13 @@ export function buildReminderMessage(
   startTime: Date,
   treatmentName: string | null,
   dentistName: string | null,
-  hoursAhead: 48 | 2
+  hoursAhead: 24 | 2
 ): string {
   const dateStr = format(startTime, "EEEE d MMMM 'alle' HH:mm", { locale: it });
   const treatment = treatmentName ?? "Visita";
   const dentist = dentistName ? `\nDentista: ${dentistName}` : "";
 
-  if (hoursAhead === 48) {
+  if (hoursAhead === 24) {
     return (
       `Gentile ${patientName}, le ricordiamo che *domani* ha un appuntamento presso ${studioName}.\n\n` +
       `🗓 ${dateStr}\n` +

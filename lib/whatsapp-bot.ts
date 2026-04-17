@@ -117,16 +117,21 @@ export async function handleIncomingMessage(params: {
 /** Session expiry: 1 hour */
 const SESSION_TTL_MS = 60 * 60 * 1000;
 
-/** Capitalize first letter of each word: "marco rossi" → "Marco Rossi" */
+/**
+ * Capitalizes first letter of each word and collapses extra spaces.
+ * "  marco   rossi  " → "Marco Rossi"
+ */
 function capitalize(s: string): string {
   return s
+    .trim()
+    .replace(/\s+/g, " ")
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /**
  * Handles conversational registration for unknown phone numbers.
- * Flow: ask_name → ask_surname → ask_email → ask_confirm → ask_consent → create patient.
+ * Flow: ask_fullname → ask_email → ask_confirm → ask_consent → create patient.
  */
 async function handleRegistration(
   studio: typeof studios.$inferSelect,
@@ -153,75 +158,60 @@ async function handleRegistration(
   const session = existing && existing.expiresAt >= new Date() ? existing : null;
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
 
-  // No active session → first contact, ask for name
+  // No active session → first contact, ask for full name
   if (!session) {
     await db
       .insert(whatsappSessions)
       .values({
         studioId: studio.id,
         phone,
-        state: "reg_ask_name",
+        state: "reg_ask_fullname",
         data: {},
         expiresAt,
       })
       .onConflictDoUpdate({
         target: [whatsappSessions.studioId, whatsappSessions.phone],
-        set: { state: "reg_ask_name", data: {}, expiresAt, updatedAt: new Date() },
+        set: { state: "reg_ask_fullname", data: {}, expiresAt, updatedAt: new Date() },
       });
 
     return (
       `Benvenuto/a su *${studio.name}*! 👋\n\n` +
       `Per poterti assistere al meglio, ho bisogno di registrarti.\n\n` +
-      `Qual è il tuo *nome*?`
+      `Come ti chiami? Scrivi *nome e cognome*.`
     );
   }
 
   const data = (session.data ?? {}) as Record<string, string>;
 
-  // Step 1: got name, ask surname
-  if (session.state === "reg_ask_name") {
-    const firstName = capitalize(body.trim());
-    if (!firstName) {
-      return "Per favore, scrivi il tuo *nome*.";
+  // Step 1: got full name → split into firstName + lastName, ask email
+  if (session.state === "reg_ask_fullname") {
+    const parts = body.trim().replace(/\s+/g, " ").split(" ").filter(Boolean);
+    if (parts.length < 2) {
+      return `Per favore scrivi sia il *nome* che il *cognome* (es. Marco Rossi).`;
     }
 
-    await db
-      .update(whatsappSessions)
-      .set({
-        state: "reg_ask_surname",
-        data: { ...data, firstName },
-        expiresAt,
-        updatedAt: new Date(),
-      })
-      .where(eq(whatsappSessions.id, session.id));
-
-    return `Grazie *${firstName}*! Qual è il tuo *cognome*?`;
-  }
-
-  // Step 2: got surname, ask email
-  if (session.state === "reg_ask_surname") {
-    const lastName = capitalize(body.trim());
-    if (!lastName) {
-      return "Per favore, scrivi il tuo *cognome*.";
-    }
+    // First word = firstName, rest = lastName (handles compound surnames)
+    const firstName = capitalize(parts[0]);
+    const lastName = capitalize(parts.slice(1).join(" "));
 
     await db
       .update(whatsappSessions)
       .set({
         state: "reg_ask_email",
-        data: { ...data, lastName },
+        data: { ...data, firstName, lastName },
         expiresAt,
         updatedAt: new Date(),
       })
       .where(eq(whatsappSessions.id, session.id));
 
     return (
-      `Qual è il tuo indirizzo *email*?\n\n` +
+      `Grazie *${firstName} ${lastName}*!\n\n` +
+      `Qual è il tuo indirizzo *email*?\n` +
       `Se preferisci non fornirlo, scrivi *procedi*.`
     );
   }
 
-  // Step 3: got email (or skip), show summary for confirmation
+  // Step 2: got email (or skip), show summary for confirmation
   if (session.state === "reg_ask_email") {
     const input = body.trim();
     let email: string | undefined;
@@ -265,14 +255,14 @@ async function handleRegistration(
       await db
         .update(whatsappSessions)
         .set({
-          state: "reg_ask_name",
+          state: "reg_ask_fullname",
           data: {},
           expiresAt,
           updatedAt: new Date(),
         })
         .where(eq(whatsappSessions.id, session.id));
 
-      return `Nessun problema, ricominciamo!\n\nQual è il tuo *nome*?`;
+      return `Nessun problema, ricominciamo!\n\nCome ti chiami? Scrivi *nome e cognome*.`;
     }
 
     if (answer !== "si" && answer !== "sì") {
@@ -347,7 +337,7 @@ async function handleRegistration(
   return (
     `Benvenuto/a su *${studio.name}*! 👋\n\n` +
     `Per poterti assistere al meglio, ho bisogno di registrarti.\n\n` +
-    `Qual è il tuo *nome*?`
+    `Come ti chiami? Scrivi *nome e cognome*.`
   );
 }
 

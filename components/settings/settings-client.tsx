@@ -412,10 +412,8 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700 space-y-1">
                 <p className="font-medium">Funzionalità abilitate quando configurato:</p>
                 <ul className="list-disc list-inside space-y-0.5 text-xs">
-                  <li>Messaggio di benvenuto ai nuovi pazienti</li>
-                  <li>Registrazione self-service via WhatsApp</li>
-                  <li>Lista appuntamenti su richiesta</li>
-                  <li>Cancellazione appuntamenti via chat</li>
+                  <li>Prenotazione appuntamenti via WhatsApp</li>
+                  <li>Lista e cancellazione appuntamenti via chat</li>
                   <li>Reminder automatici 48h e 2h prima</li>
                 </ul>
               </div>

@@ -27,7 +27,7 @@ interface PatientEditFormProps {
 export function PatientEditForm({ patient }: PatientEditFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [archiving, setArchiving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const defaultValues: Partial<PatientFormValues> = {
     firstName: patient.firstName,
@@ -64,20 +64,20 @@ export function PatientEditForm({ patient }: PatientEditFormProps) {
     }
   }
 
-  async function handleArchive() {
-    setArchiving(true);
+  async function handleDelete() {
+    setDeleting(true);
     try {
       const res = await fetch(`/api/patients/${patient.id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Errore nell'archiviazione");
-      toast.success("Paziente archiviato");
+      if (!res.ok) throw new Error("Errore nell'eliminazione");
+      toast.success("Paziente eliminato");
       router.push("/dashboard/patients");
       router.refresh();
     } catch {
-      toast.error("Errore nell'archiviazione");
+      toast.error("Errore nell'eliminazione");
     } finally {
-      setArchiving(false);
+      setDeleting(false);
     }
   }
 
@@ -86,35 +86,33 @@ export function PatientEditForm({ patient }: PatientEditFormProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Dati Anagrafici</CardTitle>
-          {!patient.isArchived && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Archivia
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Archivia paziente?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Il paziente sarà archiviato. I dati restano nel database per obblighi
-                    legali. Potrai visualizzarlo attivando i filtri &quot;Mostra archiviati&quot;.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annulla</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleArchive}
-                    disabled={archiving}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    Archivia
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
+                <Trash2 className="h-4 w-4 mr-1" />
+                Elimina
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Eliminare {patient.firstName} {patient.lastName}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tutti i dati del paziente verranno eliminati definitivamente: appuntamenti,
+                  cure, pagamenti, preventivi e messaggi WhatsApp. Questa azione non può essere annullata.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annulla</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {deleting ? "Eliminazione..." : "Elimina definitivamente"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardHeader>
         <CardContent>
           <PatientForm

@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { addMonths, format as formatDate } from "date-fns";
+import { it } from "date-fns/locale";
 import {
     Form,
     FormControl,
@@ -21,11 +23,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
+const INTERVALS = [
+    { label: "3 mesi", months: 3 },
+    { label: "6 mesi", months: 6 },
+    { label: "1 anno", months: 12 },
+] as const;
+
 const recallSchema = z.object({
     patientSearch: z.string().min(1, "Paziente obbligatorio"),
     patientId: z.string().uuid("Seleziona un paziente dalla lista"),
     recallType: z.string().min(1, "Tipo richiamo obbligatorio"),
-    dueDate: z.string().min(1, "Data obbligatoria"),
+    dueDate: z.string().min(1, "Seleziona un intervallo di tempo"),
     notes: z.string().optional(),
 });
 
@@ -46,6 +54,7 @@ function NewRecallForm() {
     const [loading, setLoading] = useState(false);
     const [suggestions, setSuggestions] = useState<PatientSuggestion[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [selectedMonths, setSelectedMonths] = useState<number | null>(null);
 
     const form = useForm<RecallFormValues>({
         resolver: zodResolver(recallSchema) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -57,6 +66,13 @@ function NewRecallForm() {
             notes: "",
         },
     });
+
+    function selectInterval(months: number) {
+        setSelectedMonths(months);
+        const date = addMonths(new Date(), months);
+        // Format as YYYY-MM-DD for the API
+        form.setValue("dueDate", date.toISOString().split("T")[0], { shouldValidate: true });
+    }
 
     // Se arriva con ?patient=<id>, carica i dati del paziente
     useEffect(() => {
@@ -228,16 +244,34 @@ function NewRecallForm() {
                                 )}
                             />
 
-                            {/* Data prevista */}
+                            {/* Intervallo richiamo */}
                             <FormField
                                 control={form.control}
                                 name="dueDate"
-                                render={({ field }) => (
+                                render={() => (
                                     <FormItem>
-                                        <FormLabel>Data prevista *</FormLabel>
-                                        <FormControl>
-                                            <Input type="date" {...field} />
-                                        </FormControl>
+                                        <FormLabel>Intervallo *</FormLabel>
+                                        <div className="flex gap-2">
+                                            {INTERVALS.map(({ label, months }) => (
+                                                <button
+                                                    key={months}
+                                                    type="button"
+                                                    onClick={() => selectInterval(months)}
+                                                    className={`flex-1 rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${
+                                                        selectedMonths === months
+                                                            ? "border-blue-600 bg-blue-50 text-blue-700"
+                                                            : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                                                    }`}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {selectedMonths && (
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Data richiamo: {formatDate(addMonths(new Date(), selectedMonths), "d MMMM yyyy", { locale: it })}
+                                            </p>
+                                        )}
                                         <FormMessage />
                                     </FormItem>
                                 )}

@@ -7,9 +7,14 @@ import {
   patientTreatments,
   recalls,
   payments,
+  quotes,
+  quoteItems,
+  whatsappMessages,
+  whatsappSessions,
   users,
   treatmentTypes,
 } from "@/lib/db/schema";
+import { inArray } from "drizzle-orm";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 
@@ -184,11 +189,30 @@ export async function DELETE(
     return NextResponse.json({ error: "Paziente non trovato" }, { status: 404 });
   }
 
-  // Soft delete
-  await db
-    .update(patients)
-    .set({ isArchived: true, updatedAt: new Date() })
-    .where(eq(patients.id, id));
+  // Hard delete: remove all related data then the patient
+  // 1. Quote items (via quote IDs)
+  const patientQuotes = await db
+    .select({ id: quotes.id })
+    .from(quotes)
+    .where(eq(quotes.patientId, id));
+
+  if (patientQuotes.length > 0) {
+    const quoteIds = patientQuotes.map((q) => q.id);
+    await db.delete(quoteItems).where(inArray(quoteItems.quoteId, quoteIds));
+    await db.delete(quotes).where(inArray(quotes.id, quoteIds));
+  }
+
+  // 2. Delete related records (order doesn't matter, all reference patient)
+  await Promise.all([
+    db.delete(payments).where(eq(payments.patientId, id)),
+    db.delete(recalls).where(eq(recalls.patientId, id)),
+    db.delete(patientTreatments).where(eq(patientTreatments.patientId, id)),
+    db.delete(appointments).where(eq(appointments.patientId, id)),
+    db.delete(whatsappMessages).where(eq(whatsappMessages.patientId, id)),
+  ]);
+
+  // 3. Delete patient
+  await db.delete(patients).where(eq(patients.id, id));
 
   return NextResponse.json({ success: true });
 }

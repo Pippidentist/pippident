@@ -135,11 +135,6 @@ export default async function PatientDetailPage({
             <h1 className="text-2xl font-bold text-gray-900">
               {patient.lastName} {patient.firstName}
             </h1>
-            {patient.isArchived ? (
-              <Badge variant="outline" className="text-gray-500">Archiviato</Badge>
-            ) : (
-              <Badge className="bg-green-100 text-green-800" variant="outline">Attivo</Badge>
-            )}
           </div>
           <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-500">
             {patient.phone && (

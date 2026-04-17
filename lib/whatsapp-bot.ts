@@ -378,7 +378,7 @@ async function runPippibotAgent(
     system: systemPrompt,
     messages,
     tools,
-    maxSteps: 5,
+    maxSteps: 10,
   });
 
   const rawText = result.text || "Non sono riuscito a elaborare la risposta. Riprova.";

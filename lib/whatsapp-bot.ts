@@ -381,6 +381,33 @@ async function runPippibotAgent(
     maxSteps: 10,
   });
 
+  // Log all tool calls for debugging
+  for (const step of result.steps) {
+    for (const tc of step.toolCalls) {
+      console.log(`[pippibot] tool=${tc.toolName} args=${JSON.stringify(tc.args)}`);
+    }
+    for (const tr of step.toolResults) {
+      console.log(`[pippibot] result=${tr.toolName}:`, JSON.stringify(tr.result).substring(0, 200));
+    }
+  }
+
+  // Safety: if AI claims booking success but createBooking was never called,
+  // override with an honest response
+  const bookingToolCalled = result.steps.some((step) =>
+    step.toolResults.some(
+      (tr) => tr.toolName === "createBooking" && (tr.result as Record<string, unknown>)?.success === true
+    )
+  );
+  const textClaimsBooking = /prenotazione.*creata|appuntamento.*confermato|prenotato con successo/i.test(result.text);
+
+  if (textClaimsBooking && !bookingToolCalled) {
+    console.warn("[pippibot] AI hallucinated booking success — overriding response");
+    return toWhatsAppFormat(
+      "Mi scuso, c'è stato un problema tecnico nella creazione dell'appuntamento. " +
+      "Puoi ripetere la richiesta? Dimmi giorno e orario e riprovo subito."
+    );
+  }
+
   const rawText = result.text || "Non sono riuscito a elaborare la risposta. Riprova.";
 
   return toWhatsAppFormat(rawText);

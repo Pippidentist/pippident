@@ -327,12 +327,15 @@ export function buildTools(studio: Studio, patient: Patient) {
       required: ["startTime", "endTime", "dentistId"],
     }),
     execute: async (args: unknown) => {
+      console.log("[createBooking] Called with args:", JSON.stringify(args));
+      try {
       const { treatmentTypeId, startTime, endTime, dentistId, notes } = args as { treatmentTypeId?: string | null; startTime: string; endTime: string; dentistId: string; notes?: string };
 
       // Validate treatmentTypeId only if provided — must be a UUID (not a name like "visita")
       const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const resolvedTreatmentTypeId = treatmentTypeId && UUID_RE.test(treatmentTypeId) ? treatmentTypeId : null;
       if (treatmentTypeId && !UUID_RE.test(treatmentTypeId)) {
+        console.log("[createBooking] Invalid treatmentTypeId:", treatmentTypeId);
         return {
           success: false,
           error: `treatmentTypeId non è un UUID valido ("${treatmentTypeId}"). Chiama prima getTreatments per ottenere l'ID corretto, oppure ometti il campo.`,
@@ -433,6 +436,7 @@ export function buildTools(studio: Studio, patient: Patient) {
 
       const appointmentLabel = formatRomeLabel(new Date(startTime));
 
+      console.log("[createBooking] SUCCESS — appointmentId:", appointment.id);
       return {
         success: true,
         appointmentId: appointment.id,
@@ -441,6 +445,10 @@ export function buildTools(studio: Studio, patient: Patient) {
         message:
           "Prenotazione creata con successo. Lo staff dello studio la confermerà a breve.",
       };
+      } catch (err) {
+        console.error("[createBooking] EXCEPTION:", err);
+        return { success: false, error: "Errore interno nella creazione dell'appuntamento." };
+      }
     },
   });
 

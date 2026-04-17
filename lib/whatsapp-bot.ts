@@ -117,9 +117,16 @@ export async function handleIncomingMessage(params: {
 /** Session expiry: 1 hour */
 const SESSION_TTL_MS = 60 * 60 * 1000;
 
+/** Capitalize first letter of each word: "marco rossi" → "Marco Rossi" */
+function capitalize(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 /**
  * Handles conversational registration for unknown phone numbers.
- * Flow: ask_name → ask_surname → ask_consent → create patient.
+ * Flow: ask_name → ask_surname → ask_email → ask_confirm → ask_consent → create patient.
  */
 async function handleRegistration(
   studio: typeof studios.$inferSelect,
@@ -173,7 +180,7 @@ async function handleRegistration(
 
   // Step 1: got name, ask surname
   if (session.state === "reg_ask_name") {
-    const firstName = body.trim();
+    const firstName = capitalize(body.trim());
     if (!firstName) {
       return "Per favore, scrivi il tuo *nome*.";
     }
@@ -191,9 +198,9 @@ async function handleRegistration(
     return `Grazie *${firstName}*! Qual è il tuo *cognome*?`;
   }
 
-  // Step 2: got surname, ask consent
+  // Step 2: got surname, ask email
   if (session.state === "reg_ask_surname") {
-    const lastName = body.trim();
+    const lastName = capitalize(body.trim());
     if (!lastName) {
       return "Per favore, scrivi il tuo *cognome*.";
     }
@@ -201,7 +208,7 @@ async function handleRegistration(
     await db
       .update(whatsappSessions)
       .set({
-        state: "reg_ask_consent",
+        state: "reg_ask_email",
         data: { ...data, lastName },
         expiresAt,
         updatedAt: new Date(),
@@ -209,15 +216,87 @@ async function handleRegistration(
       .where(eq(whatsappSessions.id, session.id));
 
     return (
-      `Perfetto, *${data.firstName} ${lastName}*!\n\n` +
+      `Qual è il tuo indirizzo *email*?\n\n` +
+      `Se preferisci non fornirlo, scrivi *procedi*.`
+    );
+  }
+
+  // Step 3: got email (or skip), show summary for confirmation
+  if (session.state === "reg_ask_email") {
+    const input = body.trim();
+    let email: string | undefined;
+
+    if (input.toLowerCase() !== "procedi") {
+      // Basic email validation
+      if (!input.includes("@") || !input.includes(".")) {
+        return `Questo non sembra un indirizzo email valido. Riprova oppure scrivi *procedi* per saltare.`;
+      }
+      email = input.toLowerCase();
+    }
+
+    const firstName = data.firstName ?? "";
+    const lastName = data.lastName ?? "";
+    const emailLine = email ? `\n📧 Email: ${email}` : "";
+
+    await db
+      .update(whatsappSessions)
+      .set({
+        state: "reg_ask_confirm",
+        data: { ...data, email: email ?? "" },
+        expiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(whatsappSessions.id, session.id));
+
+    return (
+      `Ecco il riepilogo dei tuoi dati:\n\n` +
+      `👤 Nome: *${firstName}*\n` +
+      `👤 Cognome: *${lastName}*${emailLine}\n` +
+      `📱 Telefono: ${phone}\n\n` +
+      `È tutto corretto? Scrivi *si* per confermare oppure *no* per ricominciare.`
+    );
+  }
+
+  // Step 4: confirmation → ask consent
+  if (session.state === "reg_ask_confirm") {
+    const answer = body.trim().toLowerCase();
+
+    if (answer === "no") {
+      await db
+        .update(whatsappSessions)
+        .set({
+          state: "reg_ask_name",
+          data: {},
+          expiresAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(whatsappSessions.id, session.id));
+
+      return `Nessun problema, ricominciamo!\n\nQual è il tuo *nome*?`;
+    }
+
+    if (answer !== "si" && answer !== "sì") {
+      return `Scrivi *si* per confermare i dati oppure *no* per ricominciare.`;
+    }
+
+    await db
+      .update(whatsappSessions)
+      .set({
+        state: "reg_ask_consent",
+        expiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(whatsappSessions.id, session.id));
+
+    return (
       `Per completare la registrazione, devo chiederti di accettare il trattamento ` +
-      `dei tuoi dati personali (nome, cognome, numero di telefono) ai sensi del GDPR, ` +
+      `dei tuoi dati personali (nome, cognome, telefono${data.email ? ", email" : ""}) ai sensi del GDPR, ` +
       `per permetterci di gestire i tuoi appuntamenti e inviarti comunicazioni via WhatsApp.\n\n` +
       `Scrivi *accetto* per confermare.`
     );
   }
 
-  // Step 3: waiting for consent
+  // Step 5: waiting for consent
   if (session.state === "reg_ask_consent") {
     const answer = body.trim().toLowerCase();
 
@@ -228,6 +307,7 @@ async function handleRegistration(
     // Create patient
     const firstName = data.firstName ?? "";
     const lastName = data.lastName ?? "";
+    const email = data.email || undefined;
 
     const [newPatient] = await db
       .insert(patients)
@@ -236,6 +316,7 @@ async function handleRegistration(
         firstName,
         lastName,
         phone,
+        email: email || null,
         gdprConsent: true,
         gdprConsentDate: new Date(),
       })

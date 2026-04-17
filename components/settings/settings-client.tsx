@@ -111,7 +111,7 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [savingStudio, setSavingStudio] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
-  const [twilioPhone, setTwilioPhone] = useState(studio.twilioPhoneFrom ?? "");
+  const [whatsappPhoneNumberId, setWhatsappPhoneNumberId] = useState(studio.whatsappPhoneNumberId ?? "");
   const [savingWhatsapp, setSavingWhatsapp] = useState(false);
   const [savingHours, setSavingHours] = useState(false);
 
@@ -191,7 +191,7 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
       const res = await fetch("/api/settings/studio", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ twilioPhoneFrom: twilioPhone.trim() || null }),
+        body: JSON.stringify({ whatsappPhoneNumberId: whatsappPhoneNumberId.trim() || null }),
       });
       if (!res.ok) throw new Error();
       toast.success("Configurazione WhatsApp salvata");
@@ -397,17 +397,16 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
             <form onSubmit={saveWhatsapp} className="space-y-4 max-w-lg">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Numero WhatsApp Studio (Twilio)
+                  Meta Phone Number ID
                 </label>
                 <Input
-                  placeholder="whatsapp:+393331234567"
-                  value={twilioPhone}
-                  onChange={(e) => setTwilioPhone(e.target.value)}
+                  placeholder="es. 1096906653506043"
+                  value={whatsappPhoneNumberId}
+                  onChange={(e) => setWhatsappPhoneNumberId(e.target.value)}
                 />
                 <p className="text-xs text-gray-500 mt-1.5">
-                  Inserisci il numero Twilio nel formato <code>whatsapp:+39XXXXXXXXXX</code>.
-                  Per la sandbox usa <code>whatsapp:+14155238886</code>.
-                  I pazienti potranno interagire con il bot da questo numero.
+                  Inserisci il <strong>Phone Number ID</strong> del numero WhatsApp collegato alla tua app Meta.
+                  Lo trovi su <em>Meta for Developers → WhatsApp → API Setup</em>.
                 </p>
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700 space-y-1">

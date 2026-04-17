@@ -46,23 +46,6 @@ const DAY_LABELS: Record<DayKey, string> = {
 type DaySchedule = { isOpen: boolean; open: string; close: string };
 type OpeningHoursState = Record<DayKey, DaySchedule>;
 
-function RegistrationLinkBox({ studioId }: { studioId: string }) {
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const link = `${baseUrl}/register/${studioId}`;
-  return (
-    <div className="flex items-center gap-2">
-      <Input readOnly value={link} className="text-xs text-gray-600 bg-gray-50" />
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copiato!"); }}
-      >
-        Copia
-      </Button>
-    </div>
-  );
-}
 
 const ROLE_LABELS: Record<string, string> = {
   super_admin: "Super Admin",
@@ -375,20 +358,6 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
 
       {/* Tab WhatsApp */}
       <TabsContent value="whatsapp" className="space-y-4">
-        {/* Registration link */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Link di registrazione pazienti</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-gray-600">
-              Invia questo link ai tuoi pazienti per farli registrare online. Raccoglie tutti i dati anagrafici e il consenso GDPR.
-            </p>
-            <RegistrationLinkBox studioId={studio.id} />
-          </CardContent>
-        </Card>
-
-        {/* WhatsApp bot config */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Configurazione WhatsApp Bot</CardTitle>

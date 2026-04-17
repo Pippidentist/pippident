@@ -1,7 +1,7 @@
 import { generateText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { db } from "@/lib/db";
-import { studios, patients, whatsappMessages } from "@/lib/db/schema";
+import { studios, patients, whatsappMessages, whatsappSessions } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { buildSystemPrompt } from "@/lib/pippibot/system-prompt";
 import { buildTools } from "@/lib/pippibot/tools";
@@ -42,8 +42,6 @@ export async function handleIncomingMessage(params: {
   waMessageId: string;
 }): Promise<string> {
   const { fromPhone, phoneNumberId, body, waMessageId } = params;
-
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://pippident.vercel.app";
 
   // 1. Identify studio by its Meta phone number ID
   const [studio] = await db
@@ -90,15 +88,9 @@ export async function handleIncomingMessage(params: {
     waMessageId,
   });
 
-  // 4. Unknown patient → registration link (no AI)
+  // 4. Unknown patient → conversational registration via WhatsApp
   if (!patient) {
-    const registrationUrl = `${baseUrl}/register/${studio.id}`;
-    return (
-      `Benvenuto/a su *${studio.name}*! 👋\n\n` +
-      `Per accedere ai nostri servizi online è necessario registrarsi.\n\n` +
-      `📋 Compila il modulo di registrazione:\n${registrationUrl}\n\n` +
-      `Una volta registrato potrai prenotare e gestire i tuoi appuntamenti direttamente da qui.`
-    );
+    return handleRegistration(studio, fromPhone, body);
   }
 
   // 5. Known patient → Run AI agent
@@ -120,6 +112,162 @@ export async function handleIncomingMessage(params: {
     console.error("[whatsapp-bot] AI agent error:", err);
     return "Si è verificato un errore. Riprova tra qualche minuto.";
   }
+}
+
+/** Session expiry: 1 hour */
+const SESSION_TTL_MS = 60 * 60 * 1000;
+
+/**
+ * Handles conversational registration for unknown phone numbers.
+ * Flow: ask_name → ask_surname → ask_consent → create patient.
+ */
+async function handleRegistration(
+  studio: typeof studios.$inferSelect,
+  phone: string,
+  body: string
+): Promise<string> {
+  // Load or create session
+  const [existing] = await db
+    .select()
+    .from(whatsappSessions)
+    .where(
+      and(
+        eq(whatsappSessions.studioId, studio.id),
+        eq(whatsappSessions.phone, phone)
+      )
+    )
+    .limit(1);
+
+  // If session expired, delete it and start fresh
+  if (existing && existing.expiresAt < new Date()) {
+    await db.delete(whatsappSessions).where(eq(whatsappSessions.id, existing.id));
+  }
+
+  const session = existing && existing.expiresAt >= new Date() ? existing : null;
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+
+  // No active session → first contact, ask for name
+  if (!session) {
+    await db
+      .insert(whatsappSessions)
+      .values({
+        studioId: studio.id,
+        phone,
+        state: "reg_ask_name",
+        data: {},
+        expiresAt,
+      })
+      .onConflictDoUpdate({
+        target: [whatsappSessions.studioId, whatsappSessions.phone],
+        set: { state: "reg_ask_name", data: {}, expiresAt, updatedAt: new Date() },
+      });
+
+    return (
+      `Benvenuto/a su *${studio.name}*! 👋\n\n` +
+      `Per poterti assistere al meglio, ho bisogno di registrarti.\n\n` +
+      `Qual è il tuo *nome*?`
+    );
+  }
+
+  const data = (session.data ?? {}) as Record<string, string>;
+
+  // Step 1: got name, ask surname
+  if (session.state === "reg_ask_name") {
+    const firstName = body.trim();
+    if (!firstName) {
+      return "Per favore, scrivi il tuo *nome*.";
+    }
+
+    await db
+      .update(whatsappSessions)
+      .set({
+        state: "reg_ask_surname",
+        data: { ...data, firstName },
+        expiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(whatsappSessions.id, session.id));
+
+    return `Grazie *${firstName}*! Qual è il tuo *cognome*?`;
+  }
+
+  // Step 2: got surname, ask consent
+  if (session.state === "reg_ask_surname") {
+    const lastName = body.trim();
+    if (!lastName) {
+      return "Per favore, scrivi il tuo *cognome*.";
+    }
+
+    await db
+      .update(whatsappSessions)
+      .set({
+        state: "reg_ask_consent",
+        data: { ...data, lastName },
+        expiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(whatsappSessions.id, session.id));
+
+    return (
+      `Perfetto, *${data.firstName} ${lastName}*!\n\n` +
+      `Per completare la registrazione, devo chiederti di accettare il trattamento ` +
+      `dei tuoi dati personali (nome, cognome, numero di telefono) ai sensi del GDPR, ` +
+      `per permetterci di gestire i tuoi appuntamenti e inviarti comunicazioni via WhatsApp.\n\n` +
+      `Scrivi *accetto* per confermare.`
+    );
+  }
+
+  // Step 3: waiting for consent
+  if (session.state === "reg_ask_consent") {
+    const answer = body.trim().toLowerCase();
+
+    if (answer !== "accetto") {
+      return `Per completare la registrazione, scrivi *accetto*.\n\nSe non vuoi procedere, ignora questo messaggio.`;
+    }
+
+    // Create patient
+    const firstName = data.firstName ?? "";
+    const lastName = data.lastName ?? "";
+
+    const [newPatient] = await db
+      .insert(patients)
+      .values({
+        studioId: studio.id,
+        firstName,
+        lastName,
+        phone,
+        gdprConsent: true,
+        gdprConsentDate: new Date(),
+      })
+      .returning({ id: patients.id });
+
+    // Delete session
+    await db.delete(whatsappSessions).where(eq(whatsappSessions.id, session.id));
+
+    // Log registration outbound message
+    await db.insert(whatsappMessages).values({
+      studioId: studio.id,
+      patientId: newPatient.id,
+      direction: "outbound",
+      messageType: "generic",
+      body: `Registrazione completata per ${firstName} ${lastName}`,
+      status: "sent",
+    });
+
+    return (
+      `Registrazione completata! ✅\n\n` +
+      `Benvenuto/a *${firstName} ${lastName}* nello studio *${studio.name}*.\n\n` +
+      `Da ora puoi scrivermi per prenotare appuntamenti e ricevere informazioni. Come posso aiutarti?`
+    );
+  }
+
+  // Unknown state → reset session
+  await db.delete(whatsappSessions).where(eq(whatsappSessions.id, session.id));
+  return (
+    `Benvenuto/a su *${studio.name}*! 👋\n\n` +
+    `Per poterti assistere al meglio, ho bisogno di registrarti.\n\n` +
+    `Qual è il tuo *nome*?`
+  );
 }
 
 /**

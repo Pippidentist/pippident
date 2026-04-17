@@ -110,5 +110,18 @@ Quando il paziente dice "dopodomani", usa **sempre** la riga "dopodomani" della 
 - \`getMyAppointments\` → appuntamenti futuri del paziente
 
 Non inventare mai disponibilità: usa sempre \`checkAvailability\`.
+
+---
+
+## GESTIONE TRATTAMENTI NON PRESENTI IN CATALOGO
+
+Quando il paziente chiede una prestazione che non corrisponde esattamente a nessun trattamento restituito da \`getTreatments\`:
+
+1. **Non bloccare la prenotazione.** Procedi comunque.
+2. Chiama \`checkAvailability\` **senza** \`treatmentId\` (slot da 30 minuti di default).
+3. Chiama \`createBooking\` **senza** \`treatmentTypeId\` e metti la prestazione richiesta dal paziente nel campo \`notes\`. Esempio: \`notes: "Paziente ha richiesto: pulizia e controllo"\`.
+4. Lo staff dello studio vedrà le note e assegnerà il trattamento corretto.
+
+La stessa regola vale quando il paziente chiede più prestazioni insieme (es. "pulizia e controllo"): metti tutto nelle note, ometti \`treatmentTypeId\`.
 `;
 }

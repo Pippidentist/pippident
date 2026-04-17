@@ -318,23 +318,24 @@ export function buildTools(studio: Studio, patient: Patient) {
     parameters: jsonSchema({
       type: "object" as const,
       properties: {
-        treatmentTypeId: { type: "string", description: "UUID del tipo di trattamento — usa il campo 'treatmentTypeId' restituito da checkAvailability, NON il nome della prestazione" },
+        treatmentTypeId: { type: "string", description: "UUID del tipo di trattamento — usa il campo 'treatmentTypeId' restituito da checkAvailability se presente, altrimenti ometti" },
         startTime: { type: "string", description: "Orario inizio in formato ISO8601 UTC — usa il campo 'startTime' restituito da checkAvailability" },
         endTime: { type: "string", description: "Orario fine in formato ISO8601 UTC — usa il campo 'endTime' restituito da checkAvailability" },
         dentistId: { type: "string", description: "UUID del dentista — usa il campo 'dentistId' restituito da checkAvailability" },
         notes: { type: "string", description: "Note aggiuntive del paziente" },
       },
-      required: ["treatmentTypeId", "startTime", "endTime", "dentistId"],
+      required: ["startTime", "endTime", "dentistId"],
     }),
     execute: async (args: unknown) => {
-      const { treatmentTypeId, startTime, endTime, dentistId, notes } = args as { treatmentTypeId: string; startTime: string; endTime: string; dentistId: string; notes?: string };
+      const { treatmentTypeId, startTime, endTime, dentistId, notes } = args as { treatmentTypeId?: string | null; startTime: string; endTime: string; dentistId: string; notes?: string };
 
-      // Validate treatmentTypeId is a UUID (not a name like "visita")
+      // Validate treatmentTypeId only if provided — must be a UUID (not a name like "visita")
       const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!UUID_RE.test(treatmentTypeId)) {
+      const resolvedTreatmentTypeId = treatmentTypeId && UUID_RE.test(treatmentTypeId) ? treatmentTypeId : null;
+      if (treatmentTypeId && !UUID_RE.test(treatmentTypeId)) {
         return {
           success: false,
-          error: `treatmentTypeId non è un UUID valido ("${treatmentTypeId}"). Chiama prima getTreatments per ottenere l'ID corretto, oppure usa il campo treatmentTypeId dello slot restituito da checkAvailability.`,
+          error: `treatmentTypeId non è un UUID valido ("${treatmentTypeId}"). Chiama prima getTreatments per ottenere l'ID corretto, oppure ometti il campo.`,
         };
       }
 
@@ -417,7 +418,7 @@ export function buildTools(studio: Studio, patient: Patient) {
           studioId,
           patientId,
           dentistId,
-          treatmentTypeId,
+          treatmentTypeId: resolvedTreatmentTypeId,
           startTime: new Date(startTime),
           endTime: new Date(endTime),
           status: "pending", // Always pending from Pippibot

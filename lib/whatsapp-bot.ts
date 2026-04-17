@@ -228,27 +228,39 @@ async function handleRegistration(
     const lastName = data.lastName ?? "";
     const emailLine = email ? `\n📧 Email: ${email}` : "";
 
+    const emailData = email ?? "";
+
     await db
       .update(whatsappSessions)
       .set({
-        state: "reg_ask_confirm",
-        data: { ...data, email: email ?? "" },
+        state: "reg_ask_consent",
+        data: { ...data, email: emailData },
         expiresAt,
         updatedAt: new Date(),
       })
       .where(eq(whatsappSessions.id, session.id));
 
+    const dataList = `nome, cognome, numero di telefono${emailData ? ", email" : ""}`;
+
     return (
-      `Ecco il riepilogo dei tuoi dati:\n\n` +
+      `📋 *RIEPILOGO DATI*\n\n` +
       `👤 Nome: *${firstName}*\n` +
       `👤 Cognome: *${lastName}*${emailLine}\n` +
       `📱 Telefono: ${phone}\n\n` +
-      `È tutto corretto? Scrivi *si* per confermare oppure *no* per ricominciare.`
+      `─────────────────────\n\n` +
+      `📌 *CONSENSO AL TRATTAMENTO DEI DATI PERSONALI*\n\n` +
+      `Ai sensi del *Regolamento UE 2016/679 (GDPR)*, i tuoi dati (${dataList}) saranno trattati da *${studio.name}* ESCLUSIVAMENTE per:\n` +
+      `• gestire i tuoi appuntamenti\n` +
+      `• inviarti comunicazioni e promemoria via WhatsApp\n\n` +
+      `I dati non saranno ceduti a terzi.\n\n` +
+      `─────────────────────\n\n` +
+      `Se i dati sono corretti e accetti il trattamento, scrivi *ACCETTO*.\n` +
+      `Se vuoi correggere i dati, scrivi *NO*.`
     );
   }
 
-  // Step 4: confirmation → ask consent
-  if (session.state === "reg_ask_confirm") {
+  // Step 4: consent + confirmation combined
+  if (session.state === "reg_ask_consent") {
     const answer = body.trim().toLowerCase();
 
     if (answer === "no") {
@@ -265,33 +277,8 @@ async function handleRegistration(
       return `Nessun problema, ricominciamo!\n\nCome ti chiami? Scrivi *nome e cognome*.`;
     }
 
-    if (answer !== "si" && answer !== "sì") {
-      return `Scrivi *si* per confermare i dati oppure *no* per ricominciare.`;
-    }
-
-    await db
-      .update(whatsappSessions)
-      .set({
-        state: "reg_ask_consent",
-        expiresAt,
-        updatedAt: new Date(),
-      })
-      .where(eq(whatsappSessions.id, session.id));
-
-    return (
-      `Per completare la registrazione, devo chiederti di accettare il trattamento ` +
-      `dei tuoi dati personali (nome, cognome, telefono${data.email ? ", email" : ""}) ai sensi del GDPR, ` +
-      `per permetterci di gestire i tuoi appuntamenti e inviarti comunicazioni via WhatsApp.\n\n` +
-      `Scrivi *accetto* per confermare.`
-    );
-  }
-
-  // Step 5: waiting for consent
-  if (session.state === "reg_ask_consent") {
-    const answer = body.trim().toLowerCase();
-
     if (answer !== "accetto") {
-      return `Per completare la registrazione, scrivi *accetto*.\n\nSe non vuoi procedere, ignora questo messaggio.`;
+      return `Scrivi *ACCETTO* per confermare i dati e il consenso, oppure *NO* per ricominciare.`;
     }
 
     // Create patient

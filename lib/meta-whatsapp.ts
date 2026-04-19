@@ -43,6 +43,59 @@ export async function sendMetaWhatsAppMessage(
 }
 
 /**
+ * Sends a WhatsApp template message via Meta Cloud API.
+ * Templates bypass the 24h customer-initiated session window.
+ */
+export async function sendMetaWhatsAppTemplate(
+  to: string,
+  templateName: string,
+  languageCode: string,
+  bodyParams: string[],
+  phoneNumberId: string,
+  accessToken: string
+): Promise<string> {
+  const toNormalized = to.replace(/^\+/, "");
+
+  const payload = {
+    messaging_product: "whatsapp",
+    to: toNormalized,
+    type: "template",
+    template: {
+      name: templateName,
+      language: { code: languageCode },
+      components: bodyParams.length
+        ? [
+            {
+              type: "body",
+              parameters: bodyParams.map((text) => ({ type: "text", text })),
+            },
+          ]
+        : undefined,
+    },
+  };
+
+  const res = await fetch(
+    `https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Meta API error ${res.status}: ${error}`);
+  }
+
+  const data = await res.json();
+  return (data.messages?.[0]?.id as string) ?? "unknown";
+}
+
+/**
  * Marks an incoming WhatsApp message as read.
  */
 export async function markMetaMessageRead(

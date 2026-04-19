@@ -12,10 +12,11 @@ import {
 import { eq, and, gte, lte, isNotNull } from "drizzle-orm";
 import { addHours, addDays, format, differenceInCalendarDays } from "date-fns";
 import {
-  sendWhatsAppMessage,
-  buildReminderMessage,
-  buildRecallReminderMessage,
-} from "@/lib/whatsapp";
+  sendAppointmentReminder24hTemplate,
+  sendAppointmentReminder2hTemplate,
+  sendRecallReminder30dTemplate,
+  sendRecallReminder14dTemplate,
+} from "@/lib/whatsapp-templates";
 
 export const runtime = "nodejs";
 
@@ -84,21 +85,26 @@ async function handle(req: NextRequest): Promise<NextResponse> {
     const hoursAhead: 24 | 2 | null = is2Window ? 2 : is24Window ? 24 : null;
     if (!hoursAhead) continue;
 
-    const body = buildReminderMessage(
-      patientName,
-      appt.studioName ?? "",
-      appt.startTime,
-      appt.treatmentName,
-      appt.dentistName,
-      hoursAhead
-    );
-
     try {
-      const waMessageId = await sendWhatsAppMessage(
-        appt.patientPhone,
-        body,
-        appt.studioWhatsappId ?? undefined
-      );
+      const r =
+        hoursAhead === 24
+          ? await sendAppointmentReminder24hTemplate({
+              to: appt.patientPhone,
+              patientName,
+              studioName: appt.studioName ?? "",
+              startTime: appt.startTime,
+              treatmentName: appt.treatmentName,
+              phoneNumberId: appt.studioWhatsappId,
+            })
+          : await sendAppointmentReminder2hTemplate({
+              to: appt.patientPhone,
+              patientName,
+              studioName: appt.studioName ?? "",
+              startTime: appt.startTime,
+              treatmentName: appt.treatmentName,
+              phoneNumberId: appt.studioWhatsappId,
+            });
+
       if (hoursAhead === 24) {
         await db
           .update(appointments)
@@ -117,13 +123,21 @@ async function handle(req: NextRequest): Promise<NextResponse> {
         patientId: appt.patientId ?? undefined,
         direction: "outbound",
         messageType: "reminder",
-        body,
+        body: r.body,
         status: "sent",
-        waMessageId,
+        waMessageId: r.waMessageId,
       });
     } catch (err) {
-      console.error(`[cron] appt reminder failed for ${appt.id}:`, err);
+      console.error(`[cron] appt reminder ${hoursAhead}h failed for ${appt.id}:`, err);
       result.appointments.failed++;
+      await db.insert(whatsappMessages).values({
+        studioId: appt.studioId,
+        patientId: appt.patientId ?? undefined,
+        direction: "outbound",
+        messageType: "reminder",
+        body: `[template reminder_${hoursAhead}h failed] ${err instanceof Error ? err.message : String(err)}`,
+        status: "failed",
+      });
     }
   }
 
@@ -179,20 +193,26 @@ async function handle(req: NextRequest): Promise<NextResponse> {
     const daysBefore: 30 | 14 | null = is14Window ? 14 : is30Window ? 30 : null;
     if (!daysBefore) continue;
 
-    const body = buildRecallReminderMessage(
-      patientName,
-      recall.recallType,
-      dueDate,
-      recall.studioName ?? "",
-      daysBefore
-    );
-
     try {
-      const waMessageId = await sendWhatsAppMessage(
-        recall.patientPhone,
-        body,
-        recall.studioWhatsappId ?? undefined
-      );
+      const r =
+        daysBefore === 30
+          ? await sendRecallReminder30dTemplate({
+              to: recall.patientPhone,
+              patientName,
+              recallType: recall.recallType,
+              dueDate,
+              studioName: recall.studioName ?? "",
+              phoneNumberId: recall.studioWhatsappId,
+            })
+          : await sendRecallReminder14dTemplate({
+              to: recall.patientPhone,
+              patientName,
+              recallType: recall.recallType,
+              dueDate,
+              studioName: recall.studioName ?? "",
+              phoneNumberId: recall.studioWhatsappId,
+            });
+
       if (daysBefore === 30) {
         await db
           .update(recalls)
@@ -211,13 +231,21 @@ async function handle(req: NextRequest): Promise<NextResponse> {
         patientId: recall.patientId ?? undefined,
         direction: "outbound",
         messageType: "recall",
-        body,
+        body: r.body,
         status: "sent",
-        waMessageId,
+        waMessageId: r.waMessageId,
       });
     } catch (err) {
-      console.error(`[cron] recall reminder failed for ${recall.id}:`, err);
+      console.error(`[cron] recall reminder ${daysBefore}d failed for ${recall.id}:`, err);
       result.recalls.failed++;
+      await db.insert(whatsappMessages).values({
+        studioId: recall.studioId,
+        patientId: recall.patientId ?? undefined,
+        direction: "outbound",
+        messageType: "recall",
+        body: `[template recall_${daysBefore}d failed] ${err instanceof Error ? err.message : String(err)}`,
+        status: "failed",
+      });
     }
   }
 

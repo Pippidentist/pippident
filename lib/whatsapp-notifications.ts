@@ -2,10 +2,9 @@ import { db } from "@/lib/db";
 import { appointments, patients, studios, users, treatmentTypes, whatsappMessages } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import {
-  sendWhatsAppMessage,
-  buildAppointmentConfirmedMessage,
-  buildAppointmentCancelledMessage,
-} from "@/lib/whatsapp";
+  sendAppointmentConfirmedTemplate,
+  sendAppointmentCancelledTemplate,
+} from "@/lib/whatsapp-templates";
 
 type AppointmentContext = {
   studioId: string;
@@ -56,14 +55,28 @@ async function loadAppointmentContext(appointmentId: string): Promise<Appointmen
   };
 }
 
-async function send(
+type SendableType = "appointment_confirm" | "appointment_cancel";
+
+async function logAndRun(
   ctx: AppointmentContext,
-  body: string,
-  messageType: "appointment_confirm" | "appointment_cancel"
+  messageType: SendableType,
+  action: () => Promise<{ body: string; waMessageId: string }>
 ): Promise<void> {
-  if (!ctx.patientPhone || !ctx.studioWhatsappId) return;
+  console.log(
+    `[wa-notify] ${messageType} — patient=${ctx.patientName} phone=${ctx.patientPhone ?? "MISSING"} studioWaId=${ctx.studioWhatsappId ?? "MISSING"}`
+  );
+  if (!ctx.patientPhone) {
+    console.warn(`[wa-notify] skip: patient has no phone (${ctx.patientName})`);
+    return;
+  }
+  const phoneNumberId = ctx.studioWhatsappId ?? process.env.META_PHONE_NUMBER_ID;
+  if (!phoneNumberId) {
+    console.warn(`[wa-notify] skip: studio.whatsappPhoneNumberId not set and META_PHONE_NUMBER_ID env var missing`);
+    return;
+  }
   try {
-    const waMessageId = await sendWhatsAppMessage(ctx.patientPhone, body, ctx.studioWhatsappId);
+    const { body, waMessageId } = await action();
+    console.log(`[wa-notify] sent ${messageType} — waId=${waMessageId}`);
     await db.insert(whatsappMessages).values({
       studioId: ctx.studioId,
       patientId: ctx.patientId,
@@ -74,13 +87,13 @@ async function send(
       waMessageId,
     });
   } catch (err) {
-    console.error(`[whatsapp-notifications] ${messageType} failed:`, err);
+    console.error(`[wa-notify] ${messageType} failed:`, err);
     await db.insert(whatsappMessages).values({
       studioId: ctx.studioId,
       patientId: ctx.patientId,
       direction: "outbound",
       messageType,
-      body,
+      body: `[template ${messageType} failed] ${err instanceof Error ? err.message : String(err)}`,
       status: "failed",
     });
   }
@@ -89,27 +102,33 @@ async function send(
 export async function notifyAppointmentConfirmed(appointmentId: string): Promise<void> {
   const ctx = await loadAppointmentContext(appointmentId);
   if (!ctx) return;
-  const body = buildAppointmentConfirmedMessage(
-    ctx.patientName,
-    ctx.studioName,
-    ctx.startTime,
-    ctx.treatmentName,
-    ctx.dentistName
-  );
-  await send(ctx, body, "appointment_confirm");
+  await logAndRun(ctx, "appointment_confirm", async () => {
+    const r = await sendAppointmentConfirmedTemplate({
+      to: ctx.patientPhone!,
+      patientName: ctx.patientName,
+      studioName: ctx.studioName,
+      startTime: ctx.startTime,
+      treatmentName: ctx.treatmentName,
+      phoneNumberId: ctx.studioWhatsappId,
+    });
+    return { body: r.body, waMessageId: r.waMessageId };
+  });
 }
 
 export async function notifyAppointmentCancelled(
   appointmentId: string,
-  reason?: string | null
+  _reason?: string | null
 ): Promise<void> {
   const ctx = await loadAppointmentContext(appointmentId);
   if (!ctx) return;
-  const body = buildAppointmentCancelledMessage(
-    ctx.patientName,
-    ctx.studioName,
-    ctx.startTime,
-    reason
-  );
-  await send(ctx, body, "appointment_cancel");
+  await logAndRun(ctx, "appointment_cancel", async () => {
+    const r = await sendAppointmentCancelledTemplate({
+      to: ctx.patientPhone!,
+      patientName: ctx.patientName,
+      studioName: ctx.studioName,
+      startTime: ctx.startTime,
+      phoneNumberId: ctx.studioWhatsappId,
+    });
+    return { body: r.body, waMessageId: r.waMessageId };
+  });
 }

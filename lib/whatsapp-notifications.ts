@@ -100,8 +100,13 @@ async function logAndRun(
 }
 
 export async function notifyAppointmentConfirmed(appointmentId: string): Promise<void> {
+  console.log(`[wa-notify] ENTER notifyAppointmentConfirmed id=${appointmentId}`);
   const ctx = await loadAppointmentContext(appointmentId);
-  if (!ctx) return;
+  if (!ctx) {
+    console.warn(`[wa-notify] skip: loadAppointmentContext returned null for id=${appointmentId}`);
+    return;
+  }
+  console.log(`[wa-notify] ctx loaded — phone=${ctx.patientPhone} studioWaId=${ctx.studioWhatsappId} envPid=${process.env.META_PHONE_NUMBER_ID ? "set" : "MISSING"} envToken=${process.env.META_WHATSAPP_TOKEN ? `set(len=${process.env.META_WHATSAPP_TOKEN.length})` : "MISSING"}`);
   await logAndRun(ctx, "appointment_confirm", async () => {
     const r = await sendAppointmentConfirmedTemplate({
       to: ctx.patientPhone!,
@@ -119,8 +124,13 @@ export async function notifyAppointmentCancelled(
   appointmentId: string,
   _reason?: string | null
 ): Promise<void> {
+  console.log(`[wa-notify] ENTER notifyAppointmentCancelled id=${appointmentId}`);
   const ctx = await loadAppointmentContext(appointmentId);
-  if (!ctx) return;
+  if (!ctx) {
+    console.warn(`[wa-notify] skip: loadAppointmentContext returned null for id=${appointmentId}`);
+    return;
+  }
+  console.log(`[wa-notify] ctx loaded — phone=${ctx.patientPhone} studioWaId=${ctx.studioWhatsappId} envPid=${process.env.META_PHONE_NUMBER_ID ? "set" : "MISSING"} envToken=${process.env.META_WHATSAPP_TOKEN ? `set(len=${process.env.META_WHATSAPP_TOKEN.length})` : "MISSING"}`);
   await logAndRun(ctx, "appointment_cancel", async () => {
     const r = await sendAppointmentCancelledTemplate({
       to: ctx.patientPhone!,

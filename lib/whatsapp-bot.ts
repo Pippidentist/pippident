@@ -374,7 +374,7 @@ async function runPippibotAgent(
 
   // Run AI
   const result = await generateText({
-    model: anthropic("claude-haiku-4-5-20251001"),
+    model: anthropic("claude-sonnet-4-6"),
     system: systemPrompt,
     messages,
     tools,
@@ -391,14 +391,20 @@ async function runPippibotAgent(
     }
   }
 
-  // Safety: if AI claims booking success but createBooking was never called,
-  // override with an honest response
+  // Safety: if AI claims a booking exists but createBooking was never called,
+  // override with an honest response. Cover any wording that implies a booking
+  // was saved (confirmed, pending, awaiting staff review, etc.).
   const bookingToolCalled = result.steps.some((step) =>
     step.toolResults.some(
       (tr) => tr.toolName === "createBooking" && (tr.result as Record<string, unknown>)?.success === true
     )
   );
-  const textClaimsBooking = /prenotazione.*creata|appuntamento.*confermato|prenotato con successo/i.test(result.text);
+  const textClaimsBooking =
+    /prenotazione\s+(creata|confermata|registrata|salvata|effettuata|prenotata|ricevuta|in attesa)/i.test(result.text) ||
+    /appuntamento\s+(confermato|creato|registrato|salvato|prenotato|in attesa)/i.test(result.text) ||
+    /prenotato con successo/i.test(result.text) ||
+    /attesa di conferma/i.test(result.text) ||
+    /ID\s+Appuntamento/i.test(result.text);
 
   if (textClaimsBooking && !bookingToolCalled) {
     console.warn("[pippibot] AI hallucinated booking success — overriding response");

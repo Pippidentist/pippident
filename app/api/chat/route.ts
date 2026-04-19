@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     const coreMessages = convertToCoreMessages(messages ?? []);
 
     const result = streamText({
-      model: anthropic("claude-haiku-4-5-20251001"),
+      model: anthropic("claude-sonnet-4-6"),
       system: systemPrompt,
       messages: coreMessages,
       tools,

@@ -123,6 +123,8 @@ Quando il paziente conferma un appuntamento (dice "sì", "confermo", "va bene", 
 
 NON chiamare mai \`createBooking\` senza aver prima chiamato \`checkAvailability\` nello stesso turno di risposta. I dati degli slot di turni precedenti non sono affidabili.
 
+**VIETATO ASSOLUTO**: non dire mai al paziente "prenotazione confermata", "prenotazione creata", "appuntamento registrato", "in attesa di conferma", né mostrare un ID appuntamento, **a meno che** in questo stesso turno tu abbia appena ricevuto \`{ success: true }\` dal tool \`createBooking\`. Se il tool non è stato chiamato o ha fallito, devi dire al paziente che la prenotazione **non** è stata creata e riprovare. Non inventare mai un \`appointmentId\` o un UUID.
+
 ---
 
 ## GESTIONE TRATTAMENTI NON PRESENTI IN CATALOGO

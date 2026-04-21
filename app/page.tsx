@@ -24,27 +24,27 @@ import {
 const features = [
   {
     icon: Users,
-    title: "Gestione Pazienti",
+    title: "Rubrica Pazienti",
     description:
-      "Anagrafica completa con storico cure e richiami. Ricerca rapida per nome, telefono o codice fiscale.",
+      "Anagrafica dedicata alla relazione col paziente, separata dal gestionale clinico. Ricerca per nome, telefono o codice fiscale.",
   },
   {
     icon: Calendar,
-    title: "Calendario Intelligente",
+    title: "Agenda Appuntamenti",
     description:
-      "Vista giornaliera, settimanale e mensile. Drag-and-drop per spostare appuntamenti con notifica automatica al paziente.",
+      "Vista giornaliera, settimanale e mensile dedicata ai contatti col paziente. Drag-and-drop con notifica automatica via WhatsApp.",
   },
   {
     icon: Stethoscope,
-    title: "Catalogo Cure",
+    title: "Storico Contatti",
     description:
-      "Registra le cure effettuate per dente (schema FDI). Traccia lo storico clinico di ogni paziente.",
+      "Traccia cosa è stato comunicato a ogni paziente e quali richiami sono già partiti. Il clinico resta sul tuo gestionale.",
   },
   {
     icon: Bell,
     title: "Richiami Automatici",
     description:
-      "Il sistema ricorda ai pazienti le visite periodiche via WhatsApp. Nessun paziente dimenticato.",
+      "Pippident ricorda ai pazienti igiene e controlli periodici via WhatsApp. Nessun paziente dimenticato.",
   },
   {
     icon: MessageSquare,
@@ -58,11 +58,11 @@ const plans = [
   {
     name: "Base",
     price: "99",
-    description: "Solo gestionale, no bot, no AI",
+    description: "Solo gestore pazienti, no bot, no AI",
     features: [
-      "Gestione pazienti",
-      "Calendario appuntamenti",
-      "Catalogo cure e storico clinico",
+      "Rubrica pazienti",
+      "Agenda appuntamenti",
+      "Storico contatti e richiami",
       "Supporto via email",
     ],
     cta: "Inizia gratis",
@@ -156,12 +156,13 @@ export default async function Home() {
             Pensato per i dentisti italiani
           </Badge>
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-            La gestione del tuo studio,{" "}
-            <span className="text-blue-600">finalmente semplice</span>
+            Il gestore pazienti{" "}
+            <span className="text-blue-600">che affianca il tuo gestionale</span>
           </h1>
           <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Pippident centralizza pazienti, appuntamenti e cure in un&apos;unica piattaforma.
-            I tuoi pazienti comunicano via WhatsApp — senza scaricare nessuna app.
+            Pippident si occupa della relazione con i tuoi pazienti — appuntamenti, promemoria,
+            richiami e prenotazioni via WhatsApp — mentre il tuo gestionale clinico continua a fare
+            quello per cui l&apos;hai scelto. Senza app da scaricare per i pazienti.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="#prezzi">
@@ -187,7 +188,7 @@ export default async function Home() {
             { value: "98%", label: "Studi soddisfatti" },
             { value: "−30%", label: "Riduzione no-show" },
             { value: "4h", label: "Risparmiate a settimana" },
-            { value: "GDPR", label: "Conforme" },
+            { value: "0", label: "App da installare" },
           ].map((stat) => (
             <div key={stat.label}>
               <div className="text-3xl font-bold text-blue-600">{stat.value}</div>
@@ -202,10 +203,11 @@ export default async function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Tutto ciò di cui hai bisogno, in un&apos;unica piattaforma
+              Il lato paziente del tuo studio, in un posto solo
             </h2>
             <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-              Smetti di usare fogli Excel e agende cartacee. Pippident fa il lavoro pesante per te.
+              Pippident non sostituisce il tuo gestionale clinico: si prende cura di tutto ciò che
+              riguarda il contatto con i pazienti, dalle prenotazioni ai richiami.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -478,21 +480,21 @@ export default async function Home() {
                 name: "Dott. Marco Ferretti",
                 role: "Titolare, Studio Ferretti — Milano",
                 avatar: "MF",
-                text: "Usavamo un'agenda cartacea e WhatsApp personale per i promemoria. Con Pippident ho recuperato almeno tre ore a settimana e i no-show sono calati del 40%. Setup in un pomeriggio.",
+                text: "Non volevo cambiare il mio gestionale clinico, ma i promemoria li gestivo ancora con WhatsApp personale. Pippident si è affiancato senza toccare il resto: tre ore a settimana risparmiate e no-show calati del 40%.",
                 stars: 5,
               },
               {
                 name: "Dott.ssa Laura Conti",
                 role: "Ortodontista — Roma",
                 avatar: "LC",
-                text: "I miei pazienti adorano ricevere i promemoria su WhatsApp. Nessuno scarica app, nessuna resistenza. Ho iniziato con il piano Base e sono passata a Growth dopo due settimane.",
+                text: "Pippident l'ho messo accanto al software che usiamo da anni. I pazienti ricevono i promemoria su WhatsApp, nessuno scarica app, e la segreteria passa molto meno tempo al telefono.",
                 stars: 5,
               },
               {
                 name: "Dott. Gianluca Russo",
                 role: "Studio Russo & Partners — Napoli",
                 avatar: "GR",
-                text: "Gestisco tre riuniti e uno staff di sei persone. Finalmente ho una visione chiara del calendario e dei richiami in scadenza. Il supporto risponde in tempi rapidissimi.",
+                text: "Tre riuniti, sei persone di staff, e un gestionale clinico che già funziona. Con Pippident ho finalmente una vista ordinata di appuntamenti e richiami in scadenza, senza dover cambiare il resto.",
                 stars: 5,
               },
             ].map((review) => (
@@ -543,8 +545,8 @@ export default async function Home() {
               },
               {
                 icon: TrendingUp,
-                title: "Multi-tenant",
-                desc: "I dati del tuo studio sono completamente isolati dagli altri studi.",
+                title: "Si affianca, non sostituisce",
+                desc: "Pippident convive col tuo gestionale clinico: gestisci i pazienti senza cambiare workflow.",
               },
             ].map((item) => (
               <div key={item.title} className="bg-white p-6 rounded-xl border border-gray-100">
@@ -561,7 +563,7 @@ export default async function Home() {
       <section className="py-20 px-6 bg-blue-600">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-4xl font-bold text-white mb-4">
-            Pronto a modernizzare il tuo studio?
+            Pronto ad affiancare Pippident al tuo gestionale?
           </h2>
           <p className="text-blue-100 mb-8 text-lg">
             Inizia oggi con 15 giorni gratuiti. Nessuna carta di credito richiesta.

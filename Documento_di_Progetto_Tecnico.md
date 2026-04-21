@@ -1,5 +1,5 @@
 # Documento di Progetto Tecnico e Funzionale
-## Sistema di Gestione per Studi Dentistici — **Pippident**
+## Gestore Pazienti per Studi Dentistici — **Pippident**
 
 **Versione:** 1.0
 **Data:** Febbraio 2026
@@ -29,18 +29,35 @@
 
 ## 1. Panoramica del Progetto
 
-**Pippident** è un sistema SaaS multi-tenant per la gestione completa degli studi dentistici. La piattaforma è progettata per semplificare il lavoro amministrativo del personale dentistico e migliorare l'esperienza dei pazienti, senza richiedere a questi ultimi di installare nessuna applicazione.
+**Pippident** è un SaaS multi-tenant dedicato alla **gestione dei pazienti** degli studi dentistici. Non vuole sostituire il gestionale clinico-amministrativo che lo studio già utilizza per cartelle, fatturazione e contabilità: si affianca ad esso, prendendosi carico di tutto ciò che riguarda la **relazione con il paziente** — appuntamenti, comunicazioni, promemoria, richiami periodici e prenotazioni.
+
+L'obiettivo è risolvere uno specifico problema che nessun gestionale professionale copre bene: tenere i pazienti informati, confermare gli appuntamenti e ridurre i no-show, senza chiedere loro di installare app dedicate.
+
+### Posizionamento
+
+Pippident è un **layer di contatto con il paziente**. Convive con il software clinico dello studio (es. OrisLine, OrisDental, Dental Manager, DoctorOS, ecc.) e non ne duplica le funzionalità cliniche o fiscali. Lo studio continua a registrare cartelle, piani di cura dettagliati e fatturazione sul proprio gestionale; Pippident mantiene la rubrica pazienti (con consenso GDPR, contatti, anagrafica minima), il calendario appuntamenti e tutta la comunicazione automatica.
 
 ### Obiettivi
 
-- Centralizzare la gestione di pazienti, appuntamenti e cure in un'unica piattaforma.
-- Offrire ai dentisti un portale web professionale accessibile da browser.
-- Offrire ai pazienti un canale diretto via **WhatsApp** per prenotazioni, promemoria e comunicazioni, senza necessità di scaricare app.
-- Garantire la conformità al **GDPR** per la gestione dei dati sanitari.
+- Offrire un'unica piattaforma dedicata alla **comunicazione e al follow-up** dei pazienti.
+- Ridurre no-show e tempi di segreteria grazie a promemoria e richiami automatici via WhatsApp.
+- Permettere ai pazienti di prenotare, confermare o spostare appuntamenti direttamente da WhatsApp, senza scaricare alcuna app.
+- Lasciare al dentista la libertà di mantenere il proprio gestionale clinico, integrandosi (o semplicemente coesistendo) con esso.
+- Garantire la conformità al **GDPR** per i dati anagrafici e di contatto trattati.
+
+### Cosa Pippident NON fa (per scelta)
+
+Per mantenere il focus sul rapporto col paziente, Pippident non sostituisce il gestionale professionale dello studio. In particolare, **non** gestisce:
+- Cartelle cliniche dettagliate, piani di cura con preventivi vincolanti, consensi informati specifici per procedura.
+- Fatturazione elettronica, contabilità, scontrini, tracciabilità fiscale.
+- Magazzino, ordini, gestione laboratori, tracciabilità dispositivi medici.
+- Immagini radiografiche e integrazione con sensori/rx (DICOM, PACS).
+
+Le funzionalità di "Catalogo cure" e "Storico cure per paziente" descritte in §3.3 sono pensate come **riferimenti leggeri** utili alla gestione degli appuntamenti e dei richiami (es. "igiene semestrale"), non come sostituto della cartella clinica dello studio.
 
 ### Modello di Business
 
-Ogni studio dentistico è un **tenant** indipendente. Ogni tenant ha i propri pazienti, appuntamenti e dati, completamente isolati dagli altri.
+Ogni studio dentistico è un **tenant** indipendente. Ogni tenant ha i propri pazienti, appuntamenti e dati, completamente isolati dagli altri. Pippident viene venduto in abbonamento mensile come servizio complementare al gestionale clinico già in uso.
 
 ---
 
@@ -131,9 +148,9 @@ Il paziente non ha un account nel portale web. Interagisce con lo studio esclusi
 
 ---
 
-### 3.3 Gestione Cure e Tipi di Visita
+### 3.3 Catalogo Tipi di Visita e Riferimento Cure
 
-**Descrizione:** Catalogo delle cure e delle procedure che lo studio offre. Ogni cura ha un nome, una descrizione, una durata standard e un prezzo di listino.
+**Descrizione:** Catalogo leggero dei tipi di visita e delle procedure che lo studio offre, usato principalmente per organizzare appuntamenti e richiami (es. "Igiene", "Visita di controllo"). Non sostituisce la cartella clinica del gestionale professionale. Ogni voce ha un nome, una descrizione, una durata standard e un prezzo di listino indicativo.
 
 **Dati Cura/Tipo di Visita:**
 - Codice interno
@@ -144,8 +161,8 @@ Il paziente non ha un account nel portale web. Interagisce con lo studio esclusi
 - Categoria (es. Conservativa, Ortodonzia, Implantologia, Igiene, Protesi)
 - Attiva/Non attiva
 
-**Storico cure per paziente:**
-Ogni cura effettuata su un paziente viene registrata con:
+**Storico cure per paziente (riferimento leggero):**
+Ai fini di richiami e continuità comunicativa, ogni cura/prestazione eseguita può essere registrata in Pippident con i dati essenziali elencati sotto. La documentazione clinica di dettaglio (piano di cura, consensi informati, immagini) resta sul gestionale clinico dello studio.
 - Riferimento al paziente
 - Riferimento all'appuntamento (se la cura è avvenuta durante un appuntamento)
 - Cura effettuata (dal catalogo)
@@ -191,7 +208,7 @@ Ogni cura effettuata su un paziente viene registrata con:
 
 ### 3.5 Portale Dentisti (Web)
 
-**Descrizione:** Applicazione web accessibile da browser, costruita con Next.js, che il personale dello studio utilizza quotidianamente.
+**Descrizione:** Applicazione web accessibile da browser, costruita con Next.js, che il personale dello studio utilizza **in parallelo** al proprio gestionale clinico. Non richiede di abbandonare il software in uso: viene tenuta aperta in una seconda scheda del browser per tutto ciò che riguarda la rubrica pazienti e la comunicazione.
 
 **Accesso:**
 - Login con email e password.

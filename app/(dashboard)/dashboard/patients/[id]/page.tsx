@@ -5,7 +5,6 @@ import {
   appointments,
   patientTreatments,
   recalls,
-  payments,
   users,
   treatmentTypes,
 } from "@/lib/db/schema";
@@ -18,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { ChevronLeft, Phone, Mail, MapPin, Calendar, FileText } from "lucide-react";
+import { ChevronLeft, Phone, Mail, MapPin, Calendar } from "lucide-react";
 import { PatientEditForm } from "@/components/patients/patient-edit-form";
 
 export default async function PatientDetailPage({
@@ -42,7 +41,6 @@ export default async function PatientDetailPage({
     patientAppointmentsList,
     patientTreatmentsList,
     patientRecallsList,
-    patientPaymentsList,
   ] = await Promise.all([
     db
       .select({
@@ -82,19 +80,7 @@ export default async function PatientDetailPage({
       .where(eq(recalls.patientId, id))
       .orderBy(desc(recalls.dueDate))
       .limit(10),
-
-    db
-      .select()
-      .from(payments)
-      .where(eq(payments.patientId, id))
-      .orderBy(desc(payments.paymentDate))
-      .limit(20),
   ]);
-
-  const totalPayments = patientPaymentsList.reduce(
-    (sum, p) => sum + parseFloat(String(p.amount)),
-    0
-  );
 
   const statusColors: Record<string, string> = {
     confirmed: "bg-green-100 text-green-800",
@@ -176,9 +162,6 @@ export default async function PatientDetailPage({
           </TabsTrigger>
           <TabsTrigger value="cure">
             Cure ({patientTreatmentsList.length})
-          </TabsTrigger>
-          <TabsTrigger value="pagamenti">
-            Pagamenti ({patientPaymentsList.length})
           </TabsTrigger>
           <TabsTrigger value="richiami">
             Richiami ({patientRecallsList.length})
@@ -272,51 +255,6 @@ export default async function PatientDetailPage({
                         className={statusColors[t.status] ?? ""}
                       >
                         {statusLabels[t.status] ?? t.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Tab Pagamenti */}
-        <TabsContent value="pagamenti">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">
-                Pagamenti — Totale: €{totalPayments.toFixed(2)}
-              </CardTitle>
-              <Button size="sm" asChild>
-                <Link href={`/dashboard/payments/receipts/new?patient=${patient.id}`}>
-                  Registra Pagamento
-                </Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {patientPaymentsList.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-6">
-                  Nessun pagamento registrato
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {patientPaymentsList.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center gap-4 p-3 rounded-lg border border-gray-100"
-                    >
-                      <div className="text-sm text-gray-500 w-28 shrink-0">
-                        {format(new Date(p.paymentDate), "d MMM yyyy", { locale: it })}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">
-                          €{parseFloat(String(p.amount)).toFixed(2)}
-                        </p>
-                        {p.notes && <p className="text-xs text-gray-500">{p.notes}</p>}
-                      </div>
-                      <Badge variant="outline" className="capitalize">
-                        {p.paymentMethod?.replace("_", " ") ?? "—"}
                       </Badge>
                     </div>
                   ))}

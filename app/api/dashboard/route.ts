@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { appointments, patients, recalls, payments } from "@/lib/db/schema";
+import { appointments, patients, recalls } from "@/lib/db/schema";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
-import { startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
+import { startOfDay, endOfDay, endOfWeek } from "date-fns";
 
 export async function GET() {
   const session = await auth();
@@ -20,7 +20,6 @@ export async function GET() {
   const [
     todayAppointments,
     weekRecalls,
-    todayIncome,
     totalPatients,
   ] = await Promise.all([
     // Appuntamenti di oggi
@@ -63,17 +62,6 @@ export async function GET() {
       )
       .orderBy(recalls.dueDate),
 
-    // Incasso del giorno
-    db
-      .select({ total: sql<string>`COALESCE(SUM(${payments.amount}), 0)` })
-      .from(payments)
-      .where(
-        and(
-          eq(payments.studioId, studioId),
-          eq(payments.paymentDate, todayStart.toISOString().split("T")[0])
-        )
-      ),
-
     // Totale pazienti attivi
     db
       .select({ count: sql<number>`COUNT(*)` })
@@ -89,7 +77,6 @@ export async function GET() {
   return NextResponse.json({
     todayAppointments,
     weekRecalls,
-    todayIncome: parseFloat(todayIncome[0]?.total ?? "0"),
     totalPatients: Number(totalPatients[0]?.count ?? 0),
   });
 }

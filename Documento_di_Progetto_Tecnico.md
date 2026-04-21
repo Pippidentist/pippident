@@ -16,9 +16,8 @@
    - 3.2 Gestione Appuntamenti e Calendario
    - 3.3 Gestione Cure e Tipi di Visita
    - 3.4 Gestione Richiami
-   - 3.5 Gestione Pagamenti, Preventivi e Ricevute
-   - 3.6 Portale Dentisti (Web)
-   - 3.7 Canale Pazienti (WhatsApp Bot)
+   - 3.5 Portale Dentisti (Web)
+   - 3.6 Canale Pazienti (WhatsApp Bot)
 4. [Architettura Tecnica](#4-architettura-tecnica)
 5. [Schema del Database](#5-schema-del-database)
 6. [API e Integrazioni](#6-api-e-integrazioni)
@@ -34,7 +33,7 @@
 
 ### Obiettivi
 
-- Centralizzare la gestione di pazienti, appuntamenti, cure e pagamenti in un'unica piattaforma.
+- Centralizzare la gestione di pazienti, appuntamenti e cure in un'unica piattaforma.
 - Offrire ai dentisti un portale web professionale accessibile da browser.
 - Offrire ai pazienti un canale diretto via **WhatsApp** per prenotazioni, promemoria e comunicazioni, senza necessità di scaricare app.
 - Garantire la conformità al **GDPR** per la gestione dei dati sanitari.
@@ -54,7 +53,7 @@ Ogni studio dentistico è un **tenant** indipendente. Ogni tenant ha i propri pa
 | **Super Admin** | Amministratore della piattaforma SaaS. Gestisce i tenant (studi). |
 | **Admin Studio** | Titolare/responsabile dello studio. Accede a tutte le funzionalità del proprio studio. |
 | **Dentista** | Visualizza e gestisce il proprio agenda, i pazienti e le cure. |
-| **Segreteria** | Gestisce appuntamenti, pazienti, pagamenti e promemoria. Non accede ai dati clinici dettagliati. |
+| **Segreteria** | Gestisce appuntamenti, pazienti e promemoria. Non accede ai dati clinici dettagliati. |
 
 ### 2.2 Paziente (canale WhatsApp)
 
@@ -85,7 +84,7 @@ Il paziente non ha un account nel portale web. Interagisce con lo studio esclusi
 - **Modifica paziente:** modifica qualunque campo anagrafico. Storico delle modifiche salvato.
 - **Cancella paziente:** soft delete (il paziente viene marcato come archiviato, i dati restano nel DB per obblighi legali).
 - **Ricerca e filtri:** ricerca per nome, cognome, codice fiscale, telefono. Filtri per data di nascita, ultima visita.
-- **Scheda paziente:** vista unificata con anamnesi, storico appuntamenti, storico cure, storico pagamenti, richiami attivi.
+- **Scheda paziente:** vista unificata con anamnesi, storico appuntamenti, storico cure e richiami attivi.
 
 ---
 
@@ -141,7 +140,7 @@ Il paziente non ha un account nel portale web. Interagisce con lo studio esclusi
 - Nome (es. "Igiene Professionale", "Visita di Controllo", "Otturazione", "Impianto", "Sbiancamento")
 - Descrizione
 - Durata standard (in minuti)
-- Prezzo di listino (può essere sovrascritto per ogni paziente/preventivo)
+- Prezzo di listino (può essere sovrascritto per ogni paziente)
 - Categoria (es. Conservativa, Ortodonzia, Implantologia, Igiene, Protesi)
 - Attiva/Non attiva
 
@@ -190,51 +189,7 @@ Ogni cura effettuata su un paziente viene registrata con:
 
 ---
 
-### 3.5 Gestione Pagamenti, Preventivi e Ricevute
-
-**Descrizione:** Modulo finanziario per la gestione economica degli appuntamenti e delle cure.
-
-#### Preventivi
-
-**Dati Preventivo:**
-- Numero preventivo (progressivo per studio)
-- Paziente
-- Data emissione
-- Data scadenza (validità)
-- Elenco voci (cura, quantità, prezzo unitario, sconto %, totale riga)
-- Totale preventivo
-- Stato (Bozza, Inviato al paziente, Accettato, Rifiutato, Scaduto)
-- Note
-
-**Funzionalità:**
-- Creazione preventivo con selezione cure dal catalogo.
-- Possibilità di applicare sconti per voce o sul totale.
-- Invio al paziente via WhatsApp (link a pagina web con preview del preventivo) o email.
-- Il paziente può accettare/rifiutare il preventivo rispondendo al messaggio WhatsApp.
-- Conversione preventivo accettato in fattura/ricevuta.
-
-#### Pagamenti e Ricevute
-
-**Dati Pagamento:**
-- Riferimento al paziente
-- Riferimento alla cura/appuntamento (opzionale)
-- Data pagamento
-- Importo
-- Metodo di pagamento (Contanti, Carta, Bonifico, Finanziamento)
-- Note
-- Riferimento ricevuta
-
-**Funzionalità:**
-- Registrazione pagamenti (totali o parziali — rateizzazione).
-- Generazione ricevuta in PDF (personalizzata con logo e dati dello studio).
-- Storico pagamenti per paziente con saldo residuo.
-- Dashboard finanziaria: incassi del giorno/settimana/mese, preventivi in attesa, pagamenti in scadenza.
-
-> **Nota:** La piattaforma non gestisce la fatturazione elettronica (SDI). La ricevuta generata è un documento interno di pagamento. Per la fatturazione elettronica si rimanda a integrazione futura con gestionali dedicati (es. Fatture in Cloud).
-
----
-
-### 3.6 Portale Dentisti (Web)
+### 3.5 Portale Dentisti (Web)
 
 **Descrizione:** Applicazione web accessibile da browser, costruita con Next.js, che il personale dello studio utilizza quotidianamente.
 
@@ -255,9 +210,6 @@ Sidebar navigazione:
 │   └── Scheda paziente
 ├── Cure
 ├── Richiami
-├── Pagamenti
-│   ├── Preventivi
-│   └── Ricevute
 └── Impostazioni
     ├── Profilo studio
     ├── Utenti
@@ -269,7 +221,6 @@ Sidebar navigazione:
 - Riepilogo appuntamenti del giorno.
 - Pazienti in attesa.
 - Richiami in scadenza questa settimana.
-- Incasso del giorno.
 - Accessi rapidi alle azioni più frequenti.
 
 **Impostazioni Studio:**
@@ -279,7 +230,7 @@ Sidebar navigazione:
 
 ---
 
-### 3.7 Canale Pazienti (WhatsApp Bot)
+### 3.6 Canale Pazienti (WhatsApp Bot)
 
 **Descrizione:** Interfaccia conversazionale per i pazienti tramite WhatsApp Business API. Il paziente non deve scaricare nessuna app.
 
@@ -292,8 +243,6 @@ Sidebar navigazione:
 | Visualizza prossimo appuntamento | Il bot risponde con data, ora e tipo di visita. |
 | Conferma appuntamento | Il paziente conferma un appuntamento con un semplice messaggio. |
 | Richiesta di modifica/cancellazione | Il bot raccoglie la richiesta e notifica la segreteria. |
-| Visualizza preventivo | Il bot invia link a pagina web con il preventivo. |
-| Accetta/Rifiuta preventivo | Risposta al messaggio del preventivo. |
 | Prenota appuntamento | Flusso guidato: tipo visita → disponibilità → conferma. |
 
 **Flusso messaggi automatici (outbound):**
@@ -301,7 +250,6 @@ Sidebar navigazione:
 - Promemoria appuntamento (configurabile: 48h prima + 2h prima).
 - Notifica cambio/cancellazione appuntamento.
 - Promemoria richiamo periodico.
-- Invio preventivo.
 
 **Gestione risposte paziente:**
 - Il bot gestisce risposte semplici (Sì/No, scelta da menu).
@@ -322,9 +270,8 @@ Sidebar navigazione:
 | **Auth** | NextAuth.js v5 (Auth.js) | Email/password, JWT + session |
 | **WhatsApp API** | Meta Cloud API (WhatsApp Business) | Webhook per messaggi in entrata |
 | **Job Scheduler** | Vercel Cron Jobs | Per invio promemoria automatici |
-| **Storage** | Vercel Blob / Cloudflare R2 | Logo studio, PDF ricevute |
+| **Storage** | Vercel Blob / Cloudflare R2 | Logo studio, asset vari |
 | **Email** | Resend | Recupero password, notifiche |
-| **PDF** | React-PDF / Puppeteer | Generazione ricevute e preventivi |
 | **Hosting** | Vercel | Deploy Next.js nativo |
 
 ### 4.2 Struttura del Progetto Next.js
@@ -345,9 +292,6 @@ pippident/
 │   │   │       └── page.tsx        # Scheda paziente
 │   │   ├── treatments/
 │   │   ├── recalls/
-│   │   ├── payments/
-│   │   │   ├── quotes/
-│   │   │   └── receipts/
 │   │   └── settings/
 │   └── api/
 │       ├── auth/
@@ -355,7 +299,6 @@ pippident/
 │       ├── appointments/
 │       ├── treatments/
 │       ├── recalls/
-│       ├── payments/
 │       ├── whatsapp/
 │       │   └── webhook/            # Webhook Meta
 │       └── cron/
@@ -506,55 +449,13 @@ recalls
   created_automatically BOOLEAN DEFAULT FALSE
   created_at      TIMESTAMPTZ DEFAULT NOW()
 
--- PREVENTIVI
-quotes
-  id              UUID PRIMARY KEY
-  studio_id       UUID NOT NULL REFERENCES studios(id)
-  patient_id      UUID NOT NULL REFERENCES patients(id)
-  quote_number    VARCHAR(50) NOT NULL
-  issue_date      DATE NOT NULL
-  expiry_date     DATE
-  status          VARCHAR(50) -- draft, sent, accepted, rejected, expired
-  subtotal        DECIMAL(10,2) NOT NULL
-  discount_amount DECIMAL(10,2) DEFAULT 0
-  total           DECIMAL(10,2) NOT NULL
-  notes           TEXT
-  created_by      UUID REFERENCES users(id)
-  created_at      TIMESTAMPTZ DEFAULT NOW()
-
--- VOCI PREVENTIVO
-quote_items
-  id              UUID PRIMARY KEY
-  quote_id        UUID NOT NULL REFERENCES quotes(id)
-  treatment_type_id UUID REFERENCES treatment_types(id)
-  description     VARCHAR(255) NOT NULL
-  quantity        INT  DEFAULT 1
-  unit_price      DECIMAL(10,2) NOT NULL
-  discount_pct    DECIMAL(5,2) DEFAULT 0
-  line_total      DECIMAL(10,2) NOT NULL
-
--- PAGAMENTI
-payments
-  id              UUID PRIMARY KEY
-  studio_id       UUID NOT NULL REFERENCES studios(id)
-  patient_id      UUID NOT NULL REFERENCES patients(id)
-  quote_id        UUID REFERENCES quotes(id)
-  appointment_id  UUID REFERENCES appointments(id)
-  receipt_number  VARCHAR(50)
-  payment_date    DATE NOT NULL
-  amount          DECIMAL(10,2) NOT NULL
-  payment_method  VARCHAR(50)  -- cash, card, bank_transfer, financing
-  notes           TEXT
-  created_by      UUID REFERENCES users(id)
-  created_at      TIMESTAMPTZ  DEFAULT NOW()
-
 -- LOG MESSAGGI WHATSAPP
 whatsapp_messages
   id              UUID PRIMARY KEY
   studio_id       UUID NOT NULL REFERENCES studios(id)
   patient_id      UUID REFERENCES patients(id)
   direction       VARCHAR(10) NOT NULL  -- inbound, outbound
-  message_type    VARCHAR(50)  -- reminder, recall, quote, appointment_confirm, ...
+  message_type    VARCHAR(50)  -- reminder, recall, appointment_confirm, ...
   body            TEXT
   status          VARCHAR(50)  -- sent, delivered, read, failed
   wa_message_id   VARCHAR(255) -- ID restituito da Meta API
@@ -569,7 +470,6 @@ CREATE INDEX idx_patients_phone ON patients(phone);
 CREATE INDEX idx_appointments_studio_date ON appointments(studio_id, start_time);
 CREATE INDEX idx_appointments_dentist ON appointments(dentist_id, start_time);
 CREATE INDEX idx_recalls_due_date ON recalls(studio_id, due_date, status);
-CREATE INDEX idx_payments_patient ON payments(patient_id);
 ```
 
 ---
@@ -597,12 +497,6 @@ Tutte le API sono sotto `/api/` e richiedono autenticazione JWT.
 | GET | `/api/recalls` | Lista richiami |
 | POST | `/api/recalls` | Crea richiamo |
 | PATCH | `/api/recalls/:id` | Aggiorna stato richiamo |
-| GET | `/api/quotes` | Lista preventivi |
-| POST | `/api/quotes` | Crea preventivo |
-| PATCH | `/api/quotes/:id` | Modifica preventivo |
-| POST | `/api/payments` | Registra pagamento |
-| GET | `/api/payments` | Lista pagamenti |
-| GET | `/api/payments/:id/receipt` | Genera PDF ricevuta |
 
 ### 6.2 WhatsApp Business API (Meta Cloud API)
 
@@ -626,7 +520,6 @@ I messaggi outbound che iniziano una conversazione richiedono l'uso di **Templat
 | `appointment_cancelled` | Cancellazione | Nome paziente, Data, Ora |
 | `appointment_rescheduled` | Cambio data | Nome paziente, Nuova data, Nuova ora |
 | `recall_reminder` | Cron richiami | Nome paziente, Tipo richiamo |
-| `quote_sent` | Invio preventivo | Nome paziente, Link preventivo |
 
 ### 6.3 Cron Jobs (Vercel Cron)
 
@@ -634,7 +527,6 @@ I messaggi outbound che iniziano una conversazione richiedono l'uso di **Templat
 |---|---|---|
 | `send-appointment-reminders` | Ogni ora | Invia promemoria WhatsApp per appuntamenti nelle prossime 48h e 2h |
 | `send-recalls` | Ogni giorno alle 09:00 | Invia messaggi richiamo ai pazienti con `due_date` = oggi + 7 giorni |
-| `expire-quotes` | Ogni giorno alle 00:00 | Marca come "Scaduti" i preventivi oltre la data di scadenza |
 
 ---
 
@@ -713,23 +605,6 @@ I messaggi outbound che iniziano una conversazione richiedono l'uso di **Templat
 11. Sistema crea appuntamento bozza e notifica la segreteria nel portale
 ```
 
-### 8.3 Flusso: Preventivo e Pagamento
-
-```
-1. Dentista/Segreteria apre scheda paziente → "Nuovo Preventivo"
-2. Aggiunge voci dal catalogo cure con prezzi e sconti
-3. Salva preventivo (status: "draft")
-4. Clicca "Invia al paziente"
-5. Sistema genera link univoco al preventivo (pagina pubblica, senza login)
-6. Sistema invia template WhatsApp "quote_sent" con il link
-7. Paziente visualizza il preventivo nel browser (pagina leggera, solo lettura)
-8. Paziente risponde "Accetto" su WhatsApp
-9. Webhook riceve risposta → preventivo aggiornato status: "accepted"
-10. Segreteria vede notifica nel portale → registra pagamento
-11. Sistema genera ricevuta PDF numerata
-12. PDF salvato su storage; link inviato al paziente via WhatsApp
-```
-
 ---
 
 ## 9. Roadmap di Sviluppo
@@ -745,17 +620,13 @@ I messaggi outbound che iniziano una conversazione richiedono l'uso di **Templat
 ### Fase 2 — Core Features (Mesi 3-4)
 - [ ] Storico cure per paziente
 - [ ] Sistema richiami (manuale)
-- [ ] Preventivi e pagamenti
-- [ ] Generazione PDF ricevute
 - [ ] Integrazione WhatsApp: conferma appuntamento + promemoria
 
 ### Fase 3 — Automazione (Mesi 5-6)
 - [ ] Cron jobs per promemoria automatici
 - [ ] Richiami automatici post-cura
 - [ ] Bot WhatsApp: prenotazione guidata
-- [ ] Bot WhatsApp: accettazione preventivi
 - [ ] Calendario con drag-and-drop
-- [ ] Dashboard finanziaria
 
 ### Fase 4 — Ottimizzazione e Scale (Mesi 7-8)
 - [ ] Multi-studio (tenant) completo
@@ -763,7 +634,6 @@ I messaggi outbound che iniziano una conversazione richiedono l'uso di **Templat
 - [ ] Notifiche email come canale alternativo
 - [ ] Report e statistiche avanzate
 - [ ] Onboarding guidato per nuovi studi
-- [ ] Integrazione Fatture in Cloud (fatturazione elettronica)
 
 ---
 

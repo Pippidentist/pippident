@@ -8,7 +8,6 @@ import {
   Users,
   Stethoscope,
   Bell,
-  CreditCard,
   MessageSquare,
   CheckCircle,
   ArrowRight,
@@ -27,7 +26,7 @@ const features = [
     icon: Users,
     title: "Gestione Pazienti",
     description:
-      "Anagrafica completa con storico cure, pagamenti e richiami. Ricerca rapida per nome, telefono o codice fiscale.",
+      "Anagrafica completa con storico cure e richiami. Ricerca rapida per nome, telefono o codice fiscale.",
   },
   {
     icon: Calendar,
@@ -39,19 +38,13 @@ const features = [
     icon: Stethoscope,
     title: "Catalogo Cure",
     description:
-      "Registra le cure effettuate per dente (schema FDI). Crea preventivi dal catalogo in pochi click.",
+      "Registra le cure effettuate per dente (schema FDI). Traccia lo storico clinico di ogni paziente.",
   },
   {
     icon: Bell,
     title: "Richiami Automatici",
     description:
       "Il sistema ricorda ai pazienti le visite periodiche via WhatsApp. Nessun paziente dimenticato.",
-  },
-  {
-    icon: CreditCard,
-    title: "Preventivi e Pagamenti",
-    description:
-      "Genera preventivi, inviali al paziente via WhatsApp e traccia i pagamenti. Ricevute PDF in un click.",
   },
   {
     icon: MessageSquare,
@@ -70,7 +63,6 @@ const plans = [
       "Gestione pazienti",
       "Calendario appuntamenti",
       "Catalogo cure e storico clinico",
-      "Preventivi e pagamenti",
       "Supporto via email",
     ],
     cta: "Inizia gratis",
@@ -168,7 +160,7 @@ export default async function Home() {
             <span className="text-blue-600">finalmente semplice</span>
           </h1>
           <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Pippident centralizza pazienti, appuntamenti, cure e pagamenti in un&apos;unica piattaforma.
+            Pippident centralizza pazienti, appuntamenti e cure in un&apos;unica piattaforma.
             I tuoi pazienti comunicano via WhatsApp — senza scaricare nessuna app.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -250,7 +242,7 @@ export default async function Home() {
                 "Conferma appuntamenti con un semplice messaggio",
                 "Promemoria automatici 48h e 2h prima",
                 "Richiami periodici per igiene e controlli",
-                "Invio preventivi con link dedicato",
+                "Prenotazione guidata direttamente in chat",
               ].map((item) => (
                 <li key={item} className="flex items-center gap-3 text-gray-700">
                   <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
@@ -500,7 +492,7 @@ export default async function Home() {
                 name: "Dott. Gianluca Russo",
                 role: "Studio Russo & Partners — Napoli",
                 avatar: "GR",
-                text: "Gestisco tre riuniti e uno staff di sei persone. Finalmente ho una visione chiara del calendario e dei pagamenti in sospeso. Il supporto risponde in tempi rapidissimi.",
+                text: "Gestisco tre riuniti e uno staff di sei persone. Finalmente ho una visione chiara del calendario e dei richiami in scadenza. Il supporto risponde in tempi rapidissimi.",
                 stars: 5,
               },
             ].map((review) => (

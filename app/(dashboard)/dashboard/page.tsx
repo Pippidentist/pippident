@@ -4,7 +4,6 @@ import {
   appointments,
   patients,
   recalls,
-  payments,
   users,
 } from "@/lib/db/schema";
 import { eq, and, gte, lte, sql, ne } from "drizzle-orm";
@@ -18,7 +17,6 @@ import {
   Calendar,
   Users,
   Bell,
-  Euro,
   ArrowRight,
   Clock,
 } from "lucide-react";
@@ -51,7 +49,6 @@ export default async function DashboardPage() {
   const [
     todayAppointmentsList,
     weekRecallsList,
-    todayIncomeResult,
     totalPatientsResult,
   ] = await Promise.all([
     db
@@ -97,22 +94,11 @@ export default async function DashboardPage() {
       .orderBy(recalls.dueDate),
 
     db
-      .select({ total: sql<string>`COALESCE(SUM(${payments.amount}), 0)` })
-      .from(payments)
-      .where(
-        and(
-          eq(payments.studioId, studioId),
-          eq(payments.paymentDate, todayStart.toISOString().split("T")[0])
-        )
-      ),
-
-    db
       .select({ count: sql<number>`COUNT(*)` })
       .from(patients)
       .where(and(eq(patients.studioId, studioId), eq(patients.isArchived, false))),
   ]);
 
-  const todayIncome = parseFloat(todayIncomeResult[0]?.total ?? "0");
   const totalPatients = Number(totalPatientsResult[0]?.count ?? 0);
 
   return (
@@ -125,7 +111,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -163,22 +149,6 @@ export default async function DashboardPage() {
               <div>
                 <p className="text-sm text-gray-500">Richiami questa settimana</p>
                 <p className="text-2xl font-bold">{weekRecallsList.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <Euro className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Incasso oggi</p>
-                <p className="text-2xl font-bold">
-                  €{todayIncome.toFixed(2)}
-                </p>
               </div>
             </div>
           </CardContent>
@@ -282,7 +252,7 @@ export default async function DashboardPage() {
           <CardTitle className="text-base font-semibold">Accessi Rapidi</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
               <Link href="/dashboard/patients/new">
                 <Users className="h-5 w-5 text-blue-600" />
@@ -293,12 +263,6 @@ export default async function DashboardPage() {
               <Link href="/dashboard/calendar">
                 <Calendar className="h-5 w-5 text-green-600" />
                 <span className="text-sm">Prenota Appuntamento</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
-              <Link href="/dashboard/payments/quotes/new">
-                <Euro className="h-5 w-5 text-purple-600" />
-                <span className="text-sm">Nuovo Preventivo</span>
               </Link>
             </Button>
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">

@@ -9,9 +9,7 @@ import {
   Users,
   Stethoscope,
   Bell,
-  CreditCard,
   Settings,
-  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,15 +45,6 @@ const navItems = [
     icon: Bell,
   },
   {
-    label: "Pagamenti",
-    href: "/dashboard/payments",
-    icon: CreditCard,
-    children: [
-      { label: "Preventivi", href: "/dashboard/payments/quotes" },
-      { label: "Ricevute", href: "/dashboard/payments/receipts" },
-    ],
-  },
-  {
     label: "Impostazioni",
     href: "/dashboard/settings",
     icon: Settings,
@@ -84,42 +73,6 @@ export function Sidebar() {
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname.startsWith(item.href));
           const Icon = item.icon;
-
-          if (item.children) {
-            const isParentActive = pathname.startsWith(item.href);
-            return (
-              <div key={item.href}>
-                <div
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    isParentActive
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  )}
-                >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  <span className="flex-1">{item.label}</span>
-                  <ChevronRight className="h-4 w-4" />
-                </div>
-                <div className="ml-8 mt-1 space-y-1">
-                  {item.children.map((child) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      className={cn(
-                        "block px-3 py-1.5 rounded-lg text-sm transition-colors",
-                        pathname === child.href || pathname.startsWith(child.href)
-                          ? "bg-blue-50 text-blue-700 font-medium"
-                          : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-                      )}
-                    >
-                      {child.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            );
-          }
 
           return (
             <Link

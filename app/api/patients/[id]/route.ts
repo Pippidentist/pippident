@@ -10,7 +10,6 @@ import {
   quotes,
   quoteItems,
   whatsappMessages,
-  whatsappSessions,
   users,
   treatmentTypes,
 } from "@/lib/db/schema";
@@ -58,7 +57,7 @@ export async function GET(
   }
 
   // Fetch related data
-  const [patientAppointments, patientTreatmentsList, patientRecalls, patientPayments] =
+  const [patientAppointments, patientTreatmentsList, patientRecalls] =
     await Promise.all([
       db
         .select({
@@ -100,13 +99,6 @@ export async function GET(
         .where(eq(recalls.patientId, id))
         .orderBy(desc(recalls.dueDate))
         .limit(10),
-
-      db
-        .select()
-        .from(payments)
-        .where(eq(payments.patientId, id))
-        .orderBy(desc(payments.paymentDate))
-        .limit(20),
     ]);
 
   return NextResponse.json({
@@ -114,7 +106,6 @@ export async function GET(
     appointments: patientAppointments,
     treatments: patientTreatmentsList,
     recalls: patientRecalls,
-    payments: patientPayments,
   });
 }
 

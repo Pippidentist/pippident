@@ -47,73 +47,67 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
+/* ============================================================
+   Pippident — cyan dark theme
+   Both :root and .dark map to the same dark palette so the app
+   stays in dark mode even if next-themes cycles classes.
+   Token names follow shadcn conventions (consumed by ui/*).
+   ============================================================ */
+:root,
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --radius: 0.625rem;
+
+  /* Surfaces */
+  --background: #05090f;
+  --foreground: #eef8f1;
+  --card: #0c1520;
+  --card-foreground: #eef8f1;
+  --popover: #0c1520;
+  --popover-foreground: #eef8f1;
+
+  /* Primary = cyan accent */
+  --primary: #00e5ff;
+  --primary-foreground: #05090f;
+
+  /* Secondary surfaces */
+  --secondary: #101c28;
+  --secondary-foreground: #eef8f1;
+  --muted: #101c28;
+  --muted-foreground: #7a9a82;
+
+  /* Accent (used by hover states) */
+  --accent: #101c28;
+  --accent-foreground: #eef8f1;
+
+  /* Destructive */
+  --destructive: #ff5577;
+  --destructive-foreground: #ffffff;
+
+  /* Borders / inputs / focus ring */
+  --border: rgba(0, 229, 255, 0.12);
+  --input: rgba(0, 229, 255, 0.18);
+  --ring: rgba(0, 229, 255, 0.55);
+
+  /* Charts */
+  --chart-1: #00e5ff;
+  --chart-2: #00ff9f;
+  --chart-3: #8b7fff;
+  --chart-4: #ff7fd4;
+  --chart-5: #ffb86b;
+
+  /* Sidebar (consumed by shadcn sidebar primitive if used) */
+  --sidebar: #0c1520;
+  --sidebar-foreground: #eef8f1;
+  --sidebar-primary: #00e5ff;
+  --sidebar-primary-foreground: #05090f;
+  --sidebar-accent: #101c28;
+  --sidebar-accent-foreground: #eef8f1;
+  --sidebar-border: rgba(0, 229, 255, 0.1);
+  --sidebar-ring: rgba(0, 229, 255, 0.5);
+
+  /* Pippident-specific */
+  --lp-glow-rgb: 0, 229, 255;
+  --lp-accent-emerald: #00ff7f;
 }
 
 @layer base {
@@ -122,5 +116,807 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+  }
+}
+
+/* ============================================================
+   App shell — shared dark/cyan atmosphere for every non-landing
+   page (auth, dashboard, register, chat). Overrides hardcoded
+   Tailwind utility colors so existing pages reflow without
+   per-page rewrites.
+   ============================================================ */
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+}
+
+.app-shell .app-bg-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 55% at 15% 25%, rgba(0, 229, 255, 0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 55% at 88% 75%, rgba(0, 255, 159, 0.04) 0%, transparent 65%);
+  animation: lp-meshPulse 12s ease-in-out infinite alternate;
+}
+
+.app-shell .app-bg-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0, 229, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* Make sure main content renders above the fixed bg layers.
+   Wrapped in :where() so the rule has zero specificity and any
+   Tailwind utility classes (e.g. `fixed`, `z-50` on sidebar/header)
+   take precedence — only `main` and other unstyled children pick
+   this up. */
+:where(.app-shell) main,
+:where(.app-shell) > section,
+:where(.app-shell) > .app-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Override hardcoded Tailwind palette inside the app shell ──
+   The existing pages were authored against a light blue palette.
+   We remap those literal classes to the cyan-dark token system so
+   pages render correctly without per-page edits. */
+
+.app-shell .bg-white {
+  background-color: var(--card) !important;
+}
+.app-shell .bg-gray-50 {
+  background-color: var(--background) !important;
+}
+.app-shell .bg-gray-100 {
+  background-color: var(--secondary) !important;
+}
+.app-shell .bg-gray-200 {
+  background-color: var(--secondary) !important;
+}
+.app-shell .bg-gray-900 {
+  background-color: #03060a !important;
+}
+
+.app-shell .text-gray-900,
+.app-shell .text-black {
+  color: var(--foreground) !important;
+}
+.app-shell .text-gray-700,
+.app-shell .text-gray-800 {
+  color: var(--foreground) !important;
+}
+.app-shell .text-gray-600 {
+  color: #aacbb5 !important;
+}
+.app-shell .text-gray-500 {
+  color: var(--muted-foreground) !important;
+}
+.app-shell .text-gray-400 {
+  color: #5a7a62 !important;
+}
+
+.app-shell .bg-blue-50,
+.app-shell .bg-blue-100 {
+  background-color: rgba(0, 229, 255, 0.08) !important;
+}
+.app-shell .bg-blue-500,
+.app-shell .bg-blue-600,
+.app-shell .bg-blue-700 {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+.app-shell .hover\:bg-blue-700:hover,
+.app-shell .hover\:bg-blue-600:hover,
+.app-shell .hover\:bg-blue-50:hover {
+  background-color: rgba(0, 229, 255, 0.85) !important;
+}
+
+.app-shell .text-blue-50,
+.app-shell .text-blue-100,
+.app-shell .text-blue-200,
+.app-shell .text-blue-300,
+.app-shell .text-blue-400,
+.app-shell .text-blue-500,
+.app-shell .text-blue-600,
+.app-shell .text-blue-700 {
+  color: var(--primary) !important;
+}
+.app-shell .hover\:text-blue-600:hover,
+.app-shell .hover\:text-blue-700:hover {
+  color: var(--primary) !important;
+}
+
+.app-shell .border-gray-100,
+.app-shell .border-gray-200 {
+  border-color: var(--border) !important;
+}
+.app-shell .border-blue-200 {
+  border-color: rgba(0, 229, 255, 0.3) !important;
+}
+
+/* Green / red accents used in WhatsApp / status states */
+.app-shell .bg-green-50 {
+  background-color: rgba(0, 255, 127, 0.08) !important;
+}
+.app-shell .bg-emerald-50 {
+  background-color: rgba(0, 255, 127, 0.06) !important;
+}
+.app-shell .bg-green-100 {
+  background-color: rgba(0, 255, 127, 0.12) !important;
+}
+.app-shell .text-green-500,
+.app-shell .text-green-600,
+.app-shell .text-green-700 {
+  color: var(--lp-accent-emerald) !important;
+}
+
+.app-shell .bg-indigo-50 {
+  background-color: rgba(0, 229, 255, 0.06) !important;
+}
+.app-shell .bg-indigo-100 {
+  background-color: rgba(0, 229, 255, 0.1) !important;
+}
+.app-shell .text-indigo-400,
+.app-shell .text-indigo-500,
+.app-shell .text-indigo-600,
+.app-shell .text-indigo-700 {
+  color: var(--primary) !important;
+}
+
+.app-shell .bg-red-50 {
+  background-color: rgba(255, 85, 119, 0.1) !important;
+}
+.app-shell .text-red-600,
+.app-shell .text-red-500 {
+  color: var(--destructive) !important;
+}
+.app-shell .border-red-200 {
+  border-color: rgba(255, 85, 119, 0.3) !important;
+}
+
+/* Inputs in dark mode look better with a subtle dark surface */
+.app-shell input,
+.app-shell textarea,
+.app-shell select {
+  background-color: var(--secondary);
+  color: var(--foreground);
+}
+.app-shell input::placeholder,
+.app-shell textarea::placeholder {
+  color: var(--muted-foreground);
+}
+
+/* Visually hide scrollbar — used by the calendar grid so its day columns
+   stay perfectly aligned with the day-headers row above. The container
+   still scrolls (wheel / trackpad / keyboard). */
+.cal-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / legacy Edge */
+}
+.cal-scroll::-webkit-scrollbar {
+  display: none; /* Chrome / Safari / Edge */
+}
+
+/* ============================================================
+   Responsive layout shell
+   Breakpoint: 768px (md). Below = phone (drawer + full-width
+   header + no main padding). Above = desktop/tablet (current
+   pinned-sidebar behaviour).
+   ============================================================ */
+
+/* Sidebar — desktop default = always-visible 16rem fixed column */
+.sidebar-shell {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 16rem;
+  z-index: 60;
+  transform: translateX(0);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Mobile close button — hidden on desktop */
+.sidebar-close {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  background: rgba(0, 229, 255, 0.05);
+  color: #7a9a82;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sidebar-close:hover {
+  color: #eef8f1;
+  background: rgba(0, 229, 255, 0.1);
+}
+/* Backdrop — hidden on desktop, visible behind drawer on mobile */
+.sidebar-backdrop {
+  display: none;
+}
+
+/* Header — desktop = pinned beside the sidebar */
+.header-shell {
+  position: fixed;
+  top: 0;
+  left: 16rem;
+  right: 0;
+  height: 4rem;
+  z-index: 40;
+}
+/* Hamburger — hidden on desktop */
+.header-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  background: rgba(0, 229, 255, 0.05);
+  color: #eef8f1;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.header-hamburger:hover {
+  background: rgba(0, 229, 255, 0.1);
+  border-color: rgba(0, 229, 255, 0.25);
+}
+
+/* Dashboard <main> — desktop = leave room for the fixed sidebar/header */
+.dashboard-main {
+  padding-top: 4rem;
+  padding-left: 16rem;
+}
+.dashboard-main-inner {
+  padding: 1.5rem;
+}
+
+/* ── Mobile (≤767px): drawer mode ── */
+@media (max-width: 767px) {
+  .sidebar-shell {
+    transform: translateX(-100%);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+  }
+  .sidebar-shell[data-open="true"] {
+    transform: translateX(0);
+  }
+  .sidebar-close {
+    display: inline-flex;
+  }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .sidebar-backdrop[data-open="true"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .header-shell {
+    left: 0;
+  }
+  .header-hamburger {
+    display: inline-flex;
+  }
+
+  .dashboard-main {
+    padding-left: 0;
+  }
+  .dashboard-main-inner {
+    padding: 1rem;
+  }
+}
+
+/* Thin styled scrollbar for the table containers (shadcn Table wraps
+   children in `relative w-full overflow-x-auto`). On mobile the user
+   needs a visible cue that the table scrolls horizontally. */
+.app-shell [data-slot="table-container"]::-webkit-scrollbar {
+  height: 6px;
+}
+.app-shell [data-slot="table-container"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+.app-shell [data-slot="table-container"]::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.25);
+  border-radius: 3px;
+}
+.app-shell [data-slot="table-container"]::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.4);
+}
+
+/* ============================================================
+   Landing page design system — Pippident (dark, tech-forward)
+   Tokens, animations, and components used by the marketing home
+   ============================================================ */
+
+.landing {
+  /* Design tokens — cyan theme */
+  --lp-accent: #00e5ff;
+  --lp-accent2: #00ff9f;
+  --lp-bg: #05090f;
+  --lp-surface: #0c1520;
+  --lp-surface2: #101c28;
+  --lp-text: #eef8f1;
+  --lp-muted: #7a9a82;
+  --lp-dim: #3a5542;
+  --lp-glow: rgba(0, 229, 255, 0.15);
+  --lp-glow-rgb: 0, 229, 255;
+  --lp-border: rgba(0, 229, 255, 0.08);
+  --lp-border2: rgba(255, 255, 255, 0.06);
+
+  background: var(--lp-bg);
+  color: var(--lp-text);
+  font-family: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  min-height: 100vh;
+  position: relative;
+}
+
+.landing a {
+  color: inherit;
+}
+
+/* Background layers */
+.landing .bg-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 55% at 15% 25%, rgba(0, 229, 255, 0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 55% at 88% 75%, rgba(0, 255, 159, 0.05) 0%, transparent 65%);
+  animation: lp-meshPulse 10s ease-in-out infinite alternate;
+}
+
+.landing .bg-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0, 229, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.025) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+@keyframes lp-meshPulse {
+  0% {
+    transform: scale(1) translate(0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.08) translate(-1.5%, 1%);
+    opacity: 0.7;
+  }
+}
+
+/* Float animations (phones + hero graphic) */
+@keyframes lp-floatPhone {
+  0%,
+  100% {
+    transform: perspective(900px) rotateY(-6deg) rotateX(3deg) translateY(0px);
+  }
+  50% {
+    transform: perspective(900px) rotateY(6deg) rotateX(-3deg) translateY(-18px);
+  }
+}
+@keyframes lp-floatPhoneR {
+  0%,
+  100% {
+    transform: perspective(900px) rotateY(6deg) rotateX(-3deg) translateY(0px);
+  }
+  50% {
+    transform: perspective(900px) rotateY(-6deg) rotateX(3deg) translateY(-18px);
+  }
+}
+@keyframes lp-glowPulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes lp-dotPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--lp-glow-rgb), 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+/* Scroll reveal */
+.landing .reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.landing .reveal.in {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* Nav */
+.landing .lp-nav {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  padding: 13px 24px;
+  width: min(940px, calc(100% - 32px));
+  background: rgba(5, 9, 15, 0.75);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid rgba(0, 229, 255, 0.1);
+  border-radius: 60px;
+}
+.landing .lp-nav-logo {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+  color: var(--lp-text);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.landing .lp-nav-links {
+  display: flex;
+  gap: 24px;
+  margin-left: auto;
+}
+.landing .lp-nav-links a,
+.landing .lp-nav-login {
+  color: var(--lp-muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.landing .lp-nav-links a:hover,
+.landing .lp-nav-login:hover {
+  color: var(--lp-text);
+}
+
+/* Buttons */
+.landing .btn-pill {
+  padding: 9px 20px;
+  background: var(--lp-accent);
+  color: var(--lp-bg);
+  border-radius: 50px;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+.landing .btn-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(var(--lp-glow-rgb), 0.35);
+}
+.landing .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 30px;
+  background: var(--lp-accent);
+  color: var(--lp-bg);
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.landing .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(var(--lp-glow-rgb), 0.35);
+}
+.landing .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 30px;
+  background: transparent;
+  color: var(--lp-text);
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.landing .btn-ghost:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Badges */
+.landing .lp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: 50px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+/* "badge-green" keeps the name for backwards compat but now follows the
+   active theme accent (cyan), so the whole page harmonizes. The WhatsApp
+   section uses a locally hardcoded override to stay green. */
+.landing .lp-badge-green {
+  background: rgba(var(--lp-glow-rgb), 0.08);
+  color: var(--lp-accent);
+  border: 1px solid rgba(var(--lp-glow-rgb), 0.18);
+}
+.landing .lp-badge-cyan {
+  background: rgba(0, 255, 159, 0.08);
+  color: var(--lp-accent2);
+  border: 1px solid rgba(0, 255, 159, 0.18);
+}
+.landing .lp-badge-text {
+  background: rgba(238, 248, 241, 0.06);
+  color: var(--lp-text);
+  border: 1px solid rgba(238, 248, 241, 0.14);
+}
+
+/* Phone frame */
+.landing .phone-wrap {
+  width: 248px;
+  border-radius: 46px;
+  background: linear-gradient(145deg, #2c2c2c, #111);
+  padding: 3px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 36px 72px rgba(0, 0, 0, 0.65);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.landing .phone-wrap.float-l {
+  animation: lp-floatPhone 7s ease-in-out infinite;
+}
+.landing .phone-wrap.float-r {
+  animation: lp-floatPhoneR 7s ease-in-out infinite;
+  animation-delay: 0.8s;
+}
+.landing .phone-screen {
+  border-radius: 44px;
+  overflow: hidden;
+  background: #000;
+  position: relative;
+}
+.landing .phone-screen img {
+  width: 100%;
+  display: block;
+}
+.landing .glow-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+/* Feature cards */
+.landing .feat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto auto;
+  gap: 14px;
+}
+.landing .feat-card {
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: 20px;
+  padding: 28px 26px;
+  cursor: default;
+  transition:
+    border-color 0.3s,
+    background 0.3s,
+    box-shadow 0.3s;
+  will-change: transform;
+}
+.landing .feat-card:hover {
+  border-color: rgba(var(--lp-glow-rgb), 0.18);
+  background: var(--lp-surface2);
+  box-shadow: 0 0 30px rgba(var(--lp-glow-rgb), 0.07);
+}
+.landing .feat-icon {
+  font-size: 24px;
+  margin-bottom: 18px;
+  display: block;
+  color: var(--lp-accent);
+}
+.landing .feat-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin-bottom: 9px;
+}
+.landing .feat-desc {
+  font-size: 13.5px;
+  color: var(--lp-muted);
+  line-height: 1.7;
+}
+
+/* Pricing */
+.landing .pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.landing .price-card {
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border2);
+  border-radius: 22px;
+  padding: 32px 24px;
+  position: relative;
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
+}
+.landing .price-card:hover {
+  transform: translateY(-5px);
+}
+.landing .price-card.featured {
+  border-color: var(--lp-accent);
+  box-shadow: 0 0 40px rgba(var(--lp-glow-rgb), 0.18);
+}
+.landing .price-badge {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--lp-accent);
+  color: var(--lp-bg);
+  padding: 4px 16px;
+  border-radius: 50px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  white-space: nowrap;
+}
+
+/* Testimonials */
+.landing .testi-card {
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: 20px;
+  padding: 26px;
+}
+.landing .testi-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: rgba(var(--lp-glow-rgb), 0.12);
+  border: 1px solid rgba(var(--lp-glow-rgb), 0.25);
+  color: var(--lp-accent);
+}
+
+/* Section wrapper */
+.landing .wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 36px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   Landing page — responsive tweaks
+   - 900px: collapse desktop-grade grids (legacy breakpoint)
+   - 768px (tablet/phone boundary): hero/whats/ai stack vertically,
+     testimonials/trust become single column
+   - 480px (small phone): tighten paddings, reduce phone-frame size
+   ============================================================ */
+@media (max-width: 900px) {
+  .landing .lp-nav-links {
+    display: none;
+  }
+  .landing .feat-grid,
+  .landing .pricing-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .landing .feat-card[data-wide="true"] {
+    grid-column: span 1 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Section paddings: tighter sides on phones */
+  .landing .wrap {
+    padding: 0 20px;
+  }
+  /* Hero: text + AI graphic stack vertically */
+  .landing .lp-hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 36px !important;
+    text-align: center;
+  }
+  /* AI hero graphic: scale down to fit narrow screens */
+  .landing .lp-ai-hero-graphic {
+    width: min(360px, 90vw) !important;
+    height: min(360px, 90vw) !important;
+    margin: 0 auto;
+  }
+  /* Stats: 2-column grid instead of 4 (4×~50px is unreadable) */
+  .landing .lp-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  /* WhatsApp / AI showcase sections — phone goes above text */
+  .landing .lp-whats-grid,
+  .landing .lp-ai-grid {
+    grid-template-columns: 1fr !important;
+    gap: 36px !important;
+    padding: 36px 24px !important;
+  }
+  /* Testimonials & trust: single column */
+  .landing .lp-testi-grid,
+  .landing .lp-trust-grid {
+    grid-template-columns: 1fr !important;
+  }
+  /* Phone frames: keep readable but shrink slightly */
+  .landing .phone-wrap {
+    width: 220px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Stats: single column on small phones */
+  .landing .lp-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+  /* Phone frames smaller still */
+  .landing .phone-wrap {
+    width: 200px;
+  }
+  /* Reduce nav button padding so the pill fits */
+  .landing .btn-pill {
+    padding: 8px 14px;
+    font-size: 12.5px;
   }
 }

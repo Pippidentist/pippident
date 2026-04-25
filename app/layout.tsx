@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
@@ -8,9 +8,16 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
+});
+
 export const metadata: Metadata = {
-  title: "Pippident — Gestione Studio Dentistico",
-  description: "Piattaforma di gestione per studi dentistici",
+  title: "Pippident — Il gestore pazienti per dentisti italiani",
+  description:
+    "L'assistente AI che risponde alle chiamate 24/7, gestisce WhatsApp e ti riempie l'agenda. Affianca il tuo gestionale clinico senza sostituirlo.",
 };
 
 export default function RootLayout({
@@ -19,8 +26,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="it">
-      <body className={`${inter.variable} font-sans antialiased`}>
+    <html lang="it" className="dark">
+      <body
+        className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

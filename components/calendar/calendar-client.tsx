@@ -39,22 +39,64 @@ interface AppointmentItem {
   treatmentName?: string | null;
 }
 
-const STATUS_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  confirmed: { bg: "bg-green-100", border: "border-green-400", text: "text-green-900" },
-  pending: { bg: "bg-yellow-100", border: "border-yellow-400", text: "text-yellow-900" },
-  completed: { bg: "bg-gray-100", border: "border-gray-400", text: "text-gray-700" },
-  cancelled: { bg: "bg-red-100", border: "border-red-400", text: "text-red-900" },
-  no_show: { bg: "bg-orange-100", border: "border-orange-400", text: "text-orange-900" },
+// Vivid event colors with high-contrast text — same hue families as before,
+// just bumped to be visible against the dark cyan background. Inline styles
+// (not Tailwind classes) so they bypass the .app-shell override layer.
+const STATUS_STYLES: Record<
+  string,
+  { bg: string; border: string; text: string; glow: string }
+> = {
+  confirmed: {
+    bg: "rgba(0, 255, 127, 0.22)",
+    border: "#00FF7F",
+    text: "#C8FFE0",
+    glow: "0 0 12px rgba(0, 255, 127, 0.25)",
+  },
+  pending: {
+    bg: "rgba(255, 193, 7, 0.22)",
+    border: "#FFC107",
+    text: "#FFE9A8",
+    glow: "0 0 12px rgba(255, 193, 7, 0.25)",
+  },
+  completed: {
+    bg: "rgba(122, 154, 130, 0.22)",
+    border: "#7A9A82",
+    text: "#D8E5DB",
+    glow: "0 0 10px rgba(122, 154, 130, 0.18)",
+  },
+  cancelled: {
+    bg: "rgba(255, 85, 119, 0.22)",
+    border: "#FF5577",
+    text: "#FFD1DC",
+    glow: "0 0 12px rgba(255, 85, 119, 0.25)",
+  },
+  no_show: {
+    bg: "rgba(255, 138, 80, 0.22)",
+    border: "#FF8A50",
+    text: "#FFD9C2",
+    glow: "0 0 12px rgba(255, 138, 80, 0.25)",
+  },
 };
+
+const DAY_NAME_BY_INDEX = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 
 interface CalendarClientProps {
   dentists: Dentist[];
   treatmentTypes: TreatmentTypeOption[];
   currentUserId: string;
   currentUserRole: string;
+  openingHours: Record<string, { open: string; close: string }>;
 }
 
-export function CalendarClient({ dentists, treatmentTypes, currentUserId, currentUserRole }: CalendarClientProps) {
+export function CalendarClient({ dentists, treatmentTypes, currentUserId, currentUserRole, openingHours }: CalendarClientProps) {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [view, setView] = useState<"week" | "day">("week");
   const [selectedDay, setSelectedDay] = useState(new Date());
@@ -64,6 +106,19 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<AppointmentItem | null>(null);
+  // Mobile auto-switches to day view (week view is unreadable on phones)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handler = () => {
+      setIsMobile(mq.matches);
+      if (mq.matches) setView("day");
+    };
+    handler();
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
@@ -94,6 +149,7 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
   }, [fetchAppointments]);
 
   function handleSlotClick(day: Date, hour: number) {
+    if (!isHourOpen(day, hour)) return; // ignore clicks on closed slots
     const start = new Date(day);
     start.setHours(hour, 0, 0, 0);
     const end = new Date(start);
@@ -101,6 +157,25 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
     setSelectedSlot({ start, end });
     setEditingAppointment(null);
     setModalOpen(true);
+  }
+
+  function getDayHours(day: Date): { open: number; close: number } | null {
+    const dayName = DAY_NAME_BY_INDEX[day.getDay()];
+    const hours = openingHours[dayName];
+    if (!hours) return null; // closed all day
+    const [openH] = hours.open.split(":").map(Number);
+    const [closeH] = hours.close.split(":").map(Number);
+    return { open: openH, close: closeH };
+  }
+
+  function isDayOpen(day: Date): boolean {
+    return getDayHours(day) !== null;
+  }
+
+  function isHourOpen(day: Date, hour: number): boolean {
+    const h = getDayHours(day);
+    if (!h) return false;
+    return hour >= h.open && hour < h.close;
   }
 
   function handleAppointmentClick(apt: AppointmentItem) {
@@ -133,9 +208,9 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3">
-        <div className="flex items-center gap-2">
+      {/* Toolbar — stacks on mobile, single row on tablet+ */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 bg-white border border-gray-200 rounded-lg p-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -173,7 +248,7 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <select
             className="text-sm border border-gray-200 rounded-md px-2 py-1"
             value={selectedDentistFilter}
@@ -185,6 +260,7 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
             ))}
           </select>
 
+          {/* View toggle — Settimana hidden on mobile (week view is unreadable < 768px) */}
           <div className="flex border border-gray-200 rounded-md overflow-hidden">
             <button
               className={`px-3 py-1 text-sm ${view === "day" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
@@ -192,12 +268,14 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
             >
               Giorno
             </button>
-            <button
-              className={`px-3 py-1 text-sm ${view === "week" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
-              onClick={() => setView("week")}
-            >
-              Settimana
-            </button>
+            {!isMobile && (
+              <button
+                className={`px-3 py-1 text-sm ${view === "week" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
+                onClick={() => setView("week")}
+              >
+                Settimana
+              </button>
+            )}
           </div>
 
           <Button
@@ -214,41 +292,100 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        {/* Day headers */}
-        <div className="flex border-b border-gray-200">
-          <div className="w-14 shrink-0" />
-          {days.map((day) => (
-            <div
-              key={day.toISOString()}
-              className={`flex-1 text-center py-2 text-sm cursor-pointer hover:bg-gray-50 ${
-                isSameDay(day, new Date()) ? "bg-blue-50" : ""
-              }`}
-              onClick={() => {
-                setSelectedDay(day);
-                setView("day");
-              }}
-            >
-              <div className="text-xs text-gray-500 uppercase">
-                {format(day, "EEE", { locale: it })}
+      {/* Calendar Grid — header + grid share ONE scroll container so the
+          scrollbar gutter (if any) eats from BOTH equally and the columns
+          stay aligned. The header is sticky so it doesn't scroll away. */}
+      <div
+        className="rounded-lg cal-scroll"
+        style={{
+          background: "var(--card)",
+          border: "1px solid var(--border)",
+          overflow: "hidden auto",
+          maxHeight: "calc(100vh - 320px)",
+        }}
+      >
+        {/* Day headers — sticky so they pin to the top while the grid
+            below scrolls. Same grid-template-columns as the time grid
+            below = pixel-perfect column alignment. */}
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 5,
+            display: "grid",
+            gridTemplateColumns: `56px repeat(${days.length}, 1fr)`,
+            borderBottom: "1px solid var(--border)",
+            background: "var(--card)",
+          }}
+        >
+          <div /> {/* hours column spacer */}
+          {days.map((day) => {
+            const isToday = isSameDay(day, new Date());
+            const dayClosed = !isDayOpen(day);
+            return (
+              <div
+                key={day.toISOString()}
+                className="text-center py-2 text-sm cursor-pointer transition-colors"
+                style={{
+                  background: isToday ? "rgba(0, 229, 255, 0.08)" : "transparent",
+                  opacity: dayClosed ? 0.55 : 1,
+                  minWidth: 0,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isToday) {
+                    e.currentTarget.style.background = "rgba(0, 229, 255, 0.05)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isToday) {
+                    e.currentTarget.style.background = "transparent";
+                  }
+                }}
+                onClick={() => {
+                  setSelectedDay(day);
+                  setView("day");
+                }}
+              >
+                <div
+                  className="text-xs uppercase"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
+                  {format(day, "EEE", { locale: it })}
+                  {dayClosed && <span style={{ marginLeft: 6, fontSize: 9, letterSpacing: 0.5 }}>· CHIUSO</span>}
+                </div>
+                <div
+                  className="text-lg font-semibold"
+                  style={{ color: isToday ? "var(--primary)" : "var(--foreground)" }}
+                >
+                  {format(day, "d")}
+                </div>
               </div>
-              <div className={`text-lg font-semibold ${isSameDay(day, new Date()) ? "text-blue-600" : "text-gray-900"}`}>
-                {format(day, "d")}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Time grid */}
-        <div className="flex overflow-y-auto" style={{ maxHeight: "calc(100vh - 320px)" }}>
+        {/* Time grid — same grid-template-columns as the headers row.
+            Both share the same scroll container width, so columns
+            line up exactly even if the OS chooses to display a scrollbar. */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `56px repeat(${days.length}, 1fr)`,
+          }}
+        >
           {/* Hours column */}
-          <div className="w-14 shrink-0 border-r border-gray-200">
+          <div
+            style={{ borderRight: "1px solid var(--border)", minWidth: 0 }}
+          >
             {HOURS.map((hour) => (
               <div
                 key={hour}
-                className="border-b border-gray-100 text-xs text-gray-400 pr-2 text-right"
-                style={{ height: HOUR_HEIGHT }}
+                className="text-xs pr-2 text-right"
+                style={{
+                  height: HOUR_HEIGHT,
+                  borderBottom: "1px solid rgba(0, 229, 255, 0.05)",
+                  color: "var(--muted-foreground)",
+                }}
               >
                 <span className="relative -top-2">{hour}:00</span>
               </div>
@@ -258,46 +395,112 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
           {/* Day columns */}
           {days.map((day) => {
             const dayApts = getAppointmentsForDay(day);
+            const isToday = isSameDay(day, new Date());
+            const dayClosed = !isDayOpen(day);
             return (
               <div
                 key={day.toISOString()}
-                className={`flex-1 relative border-r border-gray-200 last:border-r-0 ${
-                  isSameDay(day, new Date()) ? "bg-blue-50/30" : ""
-                }`}
-                style={{ height: HOURS.length * HOUR_HEIGHT }}
+                className="relative"
+                style={{
+                  minWidth: 0,
+                  height: HOURS.length * HOUR_HEIGHT,
+                  borderRight: "1px solid var(--border)",
+                  background: isToday
+                    ? "rgba(0, 229, 255, 0.03)"
+                    : "transparent",
+                }}
               >
-                {/* Hour slots */}
-                {HOURS.map((hour) => (
+                {/* Closed-day backdrop: diagonal stripes covering the whole column */}
+                {dayClosed && (
                   <div
-                    key={hour}
-                    className="absolute w-full border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
-                    style={{ top: (hour - 8) * HOUR_HEIGHT, height: HOUR_HEIGHT }}
-                    onClick={() => handleSlotClick(day, hour)}
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(45deg, rgba(122, 154, 130, 0.06) 0 6px, transparent 6px 12px)",
+                      backgroundColor: "rgba(5, 9, 15, 0.35)",
+                    }}
                   />
-                ))}
+                )}
+
+                {/* Hour slots */}
+                {HOURS.map((hour) => {
+                  const slotOpen = isHourOpen(day, hour);
+                  return (
+                    <div
+                      key={hour}
+                      className="absolute w-full transition-colors"
+                      style={{
+                        top: (hour - 8) * HOUR_HEIGHT,
+                        height: HOUR_HEIGHT,
+                        borderBottom: "1px solid rgba(0, 229, 255, 0.05)",
+                        cursor: slotOpen ? "pointer" : "not-allowed",
+                        background: slotOpen
+                          ? "transparent"
+                          : "repeating-linear-gradient(45deg, rgba(122, 154, 130, 0.05) 0 6px, transparent 6px 12px)",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (slotOpen) {
+                          e.currentTarget.style.background =
+                            "rgba(0, 229, 255, 0.08)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (slotOpen) {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
+                      onClick={() => handleSlotClick(day, hour)}
+                    />
+                  );
+                })}
 
                 {/* Appointments */}
                 {dayApts.map((apt) => {
-                  const colors = STATUS_COLORS[apt.status] ?? STATUS_COLORS.confirmed;
+                  const s = STATUS_STYLES[apt.status] ?? STATUS_STYLES.confirmed;
                   return (
                     <div
                       key={apt.id}
-                      className={`absolute left-0.5 right-0.5 rounded px-1 py-0.5 border-l-2 cursor-pointer hover:opacity-80 transition-opacity overflow-hidden ${colors.bg} ${colors.border} ${colors.text}`}
+                      className="absolute rounded cursor-pointer transition-all overflow-hidden"
                       style={{
+                        left: 2,
+                        right: 2,
                         top: getTopOffset(apt.startTime),
                         height: getHeight(apt.startTime, apt.endTime) - 2,
                         zIndex: 10,
+                        background: s.bg,
+                        border: `1px solid ${s.border}`,
+                        borderLeft: `3px solid ${s.border}`,
+                        color: s.text,
+                        boxShadow: s.glow,
+                        padding: "2px 6px",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                        e.currentTarget.style.boxShadow = `${s.glow}, 0 4px 12px rgba(0,0,0,0.3)`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = s.glow;
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleAppointmentClick(apt);
                       }}
                     >
-                      <div className="text-xs font-semibold truncate">
-                        {format(parseISO(apt.startTime), "HH:mm")} {apt.patientLastName} {apt.patientFirstName}
+                      <div
+                        className="text-xs truncate"
+                        style={{ fontWeight: 600, color: s.text }}
+                      >
+                        {format(parseISO(apt.startTime), "HH:mm")}{" "}
+                        {apt.patientLastName} {apt.patientFirstName}
                       </div>
                       {getHeight(apt.startTime, apt.endTime) > 35 && (
-                        <div className="text-xs opacity-75 truncate">{apt.treatmentName}</div>
+                        <div
+                          className="text-xs truncate"
+                          style={{ opacity: 0.85, color: s.text }}
+                        >
+                          {apt.treatmentName}
+                        </div>
                       )}
                     </div>
                   );

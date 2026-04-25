@@ -28,13 +28,25 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
   }
 
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen text-gray-500">Caricamento...</div>}>
-      <ChatInterface
-        phone={phone}
-        studioId={studioId}
-        studioName={studio.name}
-      />
-    </Suspense>
+    <div className="app-shell">
+      <div className="app-bg-mesh" />
+      <div className="app-bg-grid" />
+      <div className="app-content">
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center h-screen text-gray-500">
+              Caricamento...
+            </div>
+          }
+        >
+          <ChatInterface
+            phone={phone}
+            studioId={studioId}
+            studioName={studio.name}
+          />
+        </Suspense>
+      </div>
+    </div>
   );
 }
 

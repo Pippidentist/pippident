@@ -33,8 +33,10 @@ export default async function RegisterPage({ params }: Props) {
   if (!studio) notFound();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-lg mx-auto">
+    <div className="app-shell py-10 px-4">
+      <div className="app-bg-mesh" />
+      <div className="app-bg-grid" />
+      <div className="app-content max-w-lg mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-100 rounded-full mb-4">

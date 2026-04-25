@@ -12,5 +12,11 @@ export default async function AuthLayout({
     redirect("/dashboard");
   }
 
-  return <>{children}</>;
+  return (
+    <div className="app-shell">
+      <div className="app-bg-mesh" />
+      <div className="app-bg-grid" />
+      <div className="app-content">{children}</div>
+    </div>
+  );
 }

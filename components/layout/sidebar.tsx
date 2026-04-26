@@ -44,23 +44,23 @@ export function Sidebar() {
         className="sidebar-shell flex flex-col"
         data-open={open}
         style={{
-          background: "rgba(12, 21, 32, 0.85)",
+          background: "var(--app-sidebar-bg)",
           backdropFilter: "blur(20px) saturate(1.4)",
           WebkitBackdropFilter: "blur(20px) saturate(1.4)",
-          borderRight: "1px solid rgba(0, 229, 255, 0.1)",
+          borderRight: "1px solid var(--app-sidebar-border)",
         }}
       >
         {/* Logo + close button (close only visible on mobile) */}
         <div
           className="h-16 flex items-center justify-between px-6"
-          style={{ borderBottom: "1px solid rgba(0, 229, 255, 0.08)" }}
+          style={{ borderBottom: "1px solid var(--app-sidebar-divider)" }}
         >
           <Link
             href="/dashboard"
             onClick={() => setOpen(false)}
             className="flex items-center gap-2.5"
             style={{
-              color: "#EEF8F1",
+              color: "var(--foreground)",
               textDecoration: "none",
               fontFamily: "var(--font-space-grotesk), sans-serif",
             }}
@@ -103,25 +103,26 @@ export function Sidebar() {
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                 )}
                 style={{
-                  color: isActive ? "#00E5FF" : "#7A9A82",
-                  background: isActive ? "rgba(0, 229, 255, 0.1)" : "transparent",
+                  color: isActive ? "var(--primary)" : "var(--app-text-mid)",
+                  background: isActive
+                    ? "rgba(var(--lp-glow-rgb), 0.1)"
+                    : "transparent",
                   border: isActive
-                    ? "1px solid rgba(0, 229, 255, 0.22)"
+                    ? "1px solid var(--app-icon-border)"
                     : "1px solid transparent",
                   boxShadow: isActive
-                    ? "0 0 16px rgba(0, 229, 255, 0.08)"
+                    ? "0 0 16px rgba(var(--lp-glow-rgb), 0.08)"
                     : "none",
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.color = "#EEF8F1";
-                    e.currentTarget.style.background =
-                      "rgba(255, 255, 255, 0.04)";
+                    e.currentTarget.style.color = "var(--foreground)";
+                    e.currentTarget.style.background = "var(--app-hover-bg)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.color = "#7A9A82";
+                    e.currentTarget.style.color = "var(--app-text-mid)";
                     e.currentTarget.style.background = "transparent";
                   }
                 }}
@@ -137,9 +138,9 @@ export function Sidebar() {
         <div
           style={{
             padding: "16px 16px 18px",
-            borderTop: "1px solid rgba(0, 229, 255, 0.06)",
+            borderTop: "1px solid var(--app-sidebar-divider-soft)",
             fontSize: 11,
-            color: "#3A5542",
+            color: "var(--app-text-faint)",
             letterSpacing: 0.4,
           }}
         >
@@ -149,9 +150,9 @@ export function Sidebar() {
                 width: 6,
                 height: 6,
                 borderRadius: "50%",
-                background: "#00E5FF",
+                background: "var(--primary)",
                 display: "inline-block",
-                boxShadow: "0 0 8px rgba(0, 229, 255, 0.6)",
+                boxShadow: "0 0 8px rgba(var(--lp-glow-rgb), 0.6)",
               }}
             />
             Sistema attivo

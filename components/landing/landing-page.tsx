@@ -3,13 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
-/* ── Design tokens (cyan theme, matching Claude Design handoff) ──────── */
+/* ── Theme tokens — values are CSS vars defined on .landing in globals.css.
+   The light/dark switch happens by overriding those vars on html.light. ── */
 const THEME = {
-  accent: "#00E5FF",
-  accent2: "#00FF9F",
-  bg: "#05090F",
-  glowRgb: "0,229,255",
+  accent: "var(--lp-accent)",
+  accent2: "var(--lp-accent2)",
+  bg: "var(--lp-bg)",
+  glowRgb: "var(--lp-glow-rgb)",
 } as const;
 
 /* ── Global reveal-on-scroll + 3D tilt on feature cards ──────────────── */
@@ -172,7 +174,7 @@ function AIHeroGraphic() {
           transform: "translate(-50%,-50%)",
           width: 200,
           height: 224,
-          background: "linear-gradient(145deg,#111a13,#0d1610)",
+          background: "var(--lp-robot-bg)",
           border: `1.5px solid rgba(${glowRgb},0.22)`,
           borderRadius: 32,
           display: "flex",
@@ -186,7 +188,7 @@ function AIHeroGraphic() {
         <svg width="90" height="86" viewBox="0 0 90 86" fill="none" xmlns="http://www.w3.org/2000/svg">
           <line x1="45" y1="2" x2="45" y2="13" stroke={accent} strokeWidth="2" strokeLinecap="round" />
           <circle cx="45" cy="2" r="3" fill={accent} />
-          <rect x="13" y="13" width="64" height="52" rx="14" fill="#0d1610" stroke={accent} strokeWidth="1.5" strokeOpacity="0.55" />
+          <rect x="13" y="13" width="64" height="52" rx="14" fill="var(--lp-robot-screen)" stroke={accent} strokeWidth="1.5" strokeOpacity="0.55" />
           <rect x="22" y="27" width="17" height="13" rx="4" fill={accent} opacity="0.9" />
           <rect x="51" y="27" width="17" height="13" rx="4" fill={accent} opacity="0.9" />
           <rect x="25" y="29" width="5" height="4" rx="2" fill="white" opacity="0.5" />
@@ -269,7 +271,7 @@ function AIHeroGraphic() {
           position: "absolute",
           top: 44,
           right: 20,
-          background: "rgba(10,18,12,0.92)",
+          background: "var(--lp-bubble-bg)",
           border: `1px solid rgba(${glowRgb},0.18)`,
           borderRadius: 16,
           padding: "10px 14px",
@@ -278,10 +280,10 @@ function AIHeroGraphic() {
           boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
         }}
       >
-        <div style={{ fontSize: 10.5, color: "#7A9A82", marginBottom: 2 }}>
+        <div style={{ fontSize: 10.5, color: "var(--lp-muted)", marginBottom: 2 }}>
           Paziente in chiamata
         </div>
-        <div style={{ fontSize: 13.5, fontWeight: 600, color: "#EEF8F1" }}>
+        <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--lp-text)" }}>
           Marco Bianchi
         </div>
         <div style={{ fontSize: 11, color: accent, marginTop: 3 }}>📞 Prenota visita</div>
@@ -306,7 +308,7 @@ function AIHeroGraphic() {
         <div style={{ fontSize: 10.5, color: accent, marginBottom: 3, fontWeight: 700 }}>
           AI Pippident
         </div>
-        <div style={{ fontSize: 12, color: "#AACBB5", lineHeight: 1.55 }}>
+        <div style={{ fontSize: 12, color: "var(--lp-text-soft)", lineHeight: 1.55 }}>
           Ho trovato lunedì 28 alle 10:30. Confermo?
         </div>
       </div>
@@ -317,16 +319,16 @@ function AIHeroGraphic() {
           position: "absolute",
           bottom: 46,
           right: 24,
-          background: "rgba(10,18,12,0.88)",
-          border: "1px solid rgba(255,255,255,0.06)",
+          background: "var(--lp-bubble-bg-soft)",
+          border: "1px solid var(--lp-border2)",
           borderRadius: 12,
           padding: "8px 12px",
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
         }}
       >
-        <div style={{ fontSize: 10, color: "#3A5542" }}>Fuori orario</div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#EEF8F1" }}>22:14</div>
+        <div style={{ fontSize: 10, color: "var(--lp-dim)" }}>Fuori orario</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--lp-text)" }}>22:14</div>
       </div>
     </div>
   );
@@ -353,9 +355,12 @@ function Nav() {
           Accedi
         </Link>
       </div>
-      <a href="#prezzi" className="btn-pill">
-        Prova gratis
-      </a>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <ThemeToggle />
+        <a href="#prezzi" className="btn-pill">
+          Prova gratis
+        </a>
+      </div>
     </nav>
   );
 }
@@ -423,7 +428,7 @@ function Hero() {
             style={{
               fontSize: 17,
               lineHeight: 1.75,
-              color: "#7A9A82",
+              color: "var(--lp-muted)",
               marginBottom: 38,
               maxWidth: 480,
               textWrap: "pretty",
@@ -431,7 +436,7 @@ function Hero() {
             }}
           >
             Recupera fino al{" "}
-            <strong style={{ color: "#EEF8F1" }}>30% degli appuntamenti</strong> che
+            <strong style={{ color: "var(--lp-text)" }}>30% degli appuntamenti</strong> che
             oggi perdi perché l&apos;ufficio è chiuso o le linee sono occupate.
           </p>
           <div
@@ -456,7 +461,7 @@ function Hero() {
             className="reveal"
             style={{
               fontSize: 12.5,
-              color: "#3A5542",
+              color: "var(--lp-dim)",
               letterSpacing: 0.2,
               transitionDelay: "300ms",
             }}
@@ -515,7 +520,7 @@ function Stats() {
               >
                 {s.v}
               </div>
-              <div style={{ fontSize: 13.5, color: "#5A7A62" }}>{s.l}</div>
+              <div style={{ fontSize: 13.5, color: "var(--lp-muted2)" }}>{s.l}</div>
             </div>
           ))}
         </div>
@@ -611,15 +616,15 @@ function WhatsAppSection() {
           className="lp-whats-grid"
           style={{
             background:
-              "linear-gradient(135deg, rgba(0,255,127,0.09) 0%, rgba(0,255,127,0.04) 100%)",
-            border: "1.5px solid #00FF7F",
+              "linear-gradient(135deg, rgba(var(--lp-whatsapp-rgb),0.09) 0%, rgba(var(--lp-whatsapp-rgb),0.04) 100%)",
+            border: "1.5px solid var(--lp-whatsapp)",
             borderRadius: 28,
             padding: "56px 64px",
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
             gap: 72,
             alignItems: "center",
-            boxShadow: "0 0 60px rgba(0,255,127,0.07)",
+            boxShadow: "0 0 60px rgba(var(--lp-whatsapp-rgb),0.07)",
           }}
         >
           <div style={{ display: "flex", justifyContent: "center" }}>
@@ -627,13 +632,13 @@ function WhatsAppSection() {
               src="/landing/whatsapp-mockup.png"
               alt="WhatsApp bot Pippident"
               floatClass="float-r"
-              glowColor="rgba(0,255,127,0.55)"
+              glowColor="rgba(var(--lp-whatsapp-rgb),0.55)"
             />
           </div>
           <div className="reveal">
             <span
               className="lp-badge lp-badge-green"
-              style={{ marginBottom: 20, display: "inline-flex", color: "#00FF7F" }}
+              style={{ marginBottom: 20, display: "inline-flex", color: "var(--lp-whatsapp)" }}
             >
               WhatsApp integrato
             </span>
@@ -644,17 +649,17 @@ function WhatsAppSection() {
                 letterSpacing: -1.5,
                 marginBottom: 18,
                 textWrap: "pretty",
-                color: "#FFFFFF",
+                color: "var(--lp-text-strong)",
               }}
             >
               I tuoi pazienti usano già{" "}
-              <span style={{ color: "#00FF7F" }}>WhatsApp</span>.{" "}
-              <span style={{ color: "#FFFFFF" }}>Pippident anche.</span>
+              <span style={{ color: "var(--lp-whatsapp)" }}>WhatsApp</span>.{" "}
+              <span style={{ color: "var(--lp-text-strong)" }}>Pippident anche.</span>
             </h2>
             <p
               style={{
                 fontSize: 16,
-                color: "#7A9A82",
+                color: "var(--lp-muted)",
                 lineHeight: 1.8,
                 marginBottom: 32,
                 textWrap: "pretty",
@@ -677,7 +682,7 @@ function WhatsAppSection() {
                     display: "flex",
                     gap: 11,
                     fontSize: 14.5,
-                    color: "#00FF7F",
+                    color: "var(--lp-whatsapp)",
                     alignItems: "flex-start",
                   }}
                 >
@@ -715,7 +720,7 @@ function AISection() {
                 width: 7,
                 height: 7,
                 borderRadius: "50%",
-                background: "#EEF8F1",
+                background: "var(--lp-text)",
                 display: "inline-block",
               }}
             />
@@ -728,17 +733,17 @@ function AISection() {
               letterSpacing: -1.5,
               marginBottom: 18,
               textWrap: "pretty",
-              color: "#FFFFFF",
+              color: "var(--lp-text-strong)",
             }}
           >
             Quando lo studio è chiuso,
             <br />
-            risponde l&apos;<span style={{ color: "#00E5FF" }}>AI</span>
+            risponde l&apos;<span style={{ color: "var(--lp-accent)" }}>AI</span>
           </h2>
           <p
             style={{
               fontSize: 16,
-              color: "#7A9A82",
+              color: "var(--lp-muted)",
               lineHeight: 1.8,
               marginBottom: 32,
               textWrap: "pretty",
@@ -762,10 +767,10 @@ function AISection() {
                   gap: 11,
                   fontSize: 14.5,
                   alignItems: "flex-start",
-                  color: "#00E5FF",
+                  color: "var(--lp-accent)",
                 }}
               >
-                <span style={{ marginTop: 2, flexShrink: 0, color: "#00E5FF" }}>✓</span>
+                <span style={{ marginTop: 2, flexShrink: 0, color: "var(--lp-accent)" }}>✓</span>
                 {t}
               </li>
             ))}
@@ -782,7 +787,7 @@ function AISection() {
             src="/landing/ai-call-mockup.png"
             alt="Mockup chiamata AI"
             floatClass="float-l"
-            glowColor="rgba(0,229,255,0.18)"
+            glowColor="rgba(var(--lp-glow-rgb),0.18)"
           />
         </div>
       </div>
@@ -866,7 +871,7 @@ function Pricing() {
           >
             Piani semplici e trasparenti
           </h2>
-          <p style={{ color: "#5A7A62", marginTop: 10, fontSize: 16 }}>
+          <p style={{ color: "var(--lp-muted2)", marginTop: 10, fontSize: 16 }}>
             Nessun costo nascosto. Disdici quando vuoi.
           </p>
         </div>
@@ -878,7 +883,7 @@ function Pricing() {
               style={{ transitionDelay: `${i * 80}ms` }}
             >
               {p.hot && <div className="price-badge">PIÙ SCELTO</div>}
-              <div style={{ fontSize: 12, color: "#3A5542", marginBottom: 6 }}>
+              <div style={{ fontSize: 12, color: "var(--lp-dim)", marginBottom: 6 }}>
                 {p.sub}
               </div>
               <div
@@ -896,13 +901,13 @@ function Pricing() {
                   style={{
                     fontSize: 42,
                     fontWeight: 700,
-                    color: p.hot ? THEME.accent : "#EEF8F1",
+                    color: p.hot ? THEME.accent : "var(--lp-text)",
                     letterSpacing: -1.5,
                   }}
                 >
                   €{p.price}
                 </span>
-                <span style={{ fontSize: 13, color: "#3A5542" }}>/mese</span>
+                <span style={{ fontSize: 13, color: "var(--lp-dim)" }}>/mese</span>
               </div>
               <ul
                 style={{
@@ -920,7 +925,7 @@ function Pricing() {
                       display: "flex",
                       gap: 9,
                       fontSize: 13,
-                      color: "#7A9A82",
+                      color: "var(--lp-muted)",
                       alignItems: "flex-start",
                     }}
                   >
@@ -939,9 +944,9 @@ function Pricing() {
                   fontWeight: 700,
                   fontSize: 13.5,
                   textDecoration: "none",
-                  background: p.hot ? THEME.accent : "rgba(255,255,255,0.04)",
-                  color: p.hot ? THEME.bg : "#EEF8F1",
-                  border: p.hot ? "none" : "1px solid rgba(255,255,255,0.08)",
+                  background: p.hot ? THEME.accent : "var(--lp-ghost-bg-hover)",
+                  color: p.hot ? THEME.bg : "var(--lp-text)",
+                  border: p.hot ? "none" : "1px solid var(--lp-ghost-border)",
                   transition: "all .2s",
                 }}
               >
@@ -955,7 +960,7 @@ function Pricing() {
             textAlign: "center",
             marginTop: 20,
             fontSize: 12.5,
-            color: "#3A5542",
+            color: "var(--lp-dim)",
           }}
         >
           Chiamate extra +€0.50/call · 15 giorni di prova gratuita per tutti i piani ·
@@ -1018,7 +1023,7 @@ function Testimonials() {
               <p
                 style={{
                   fontSize: 14.5,
-                  color: "#AACBB5",
+                  color: "var(--lp-text-soft)",
                   lineHeight: 1.78,
                   marginBottom: 22,
                   fontStyle: "italic",
@@ -1030,7 +1035,7 @@ function Testimonials() {
                 <div className="testi-avatar">{t.init}</div>
                 <div>
                   <div style={{ fontSize: 13.5, fontWeight: 600 }}>{t.name}</div>
-                  <div style={{ fontSize: 12, color: "#3A5542", marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: "var(--lp-dim)", marginTop: 2 }}>
                     {t.role}
                   </div>
                 </div>
@@ -1100,7 +1105,7 @@ function Trust() {
               >
                 {t.t}
               </div>
-              <p style={{ fontSize: 13.5, color: "#5A7A62", lineHeight: 1.7 }}>
+              <p style={{ fontSize: 13.5, color: "var(--lp-muted2)", lineHeight: 1.7 }}>
                 {t.d}
               </p>
             </div>
@@ -1119,7 +1124,7 @@ function CTA() {
         <div
           className="reveal"
           style={{
-            background: `linear-gradient(135deg, rgba(${THEME.glowRgb},0.1) 0%, rgba(0,229,255,0.06) 100%)`,
+            background: `linear-gradient(135deg, rgba(${THEME.glowRgb},0.1) 0%, rgba(${THEME.glowRgb},0.06) 100%)`,
             border: `1px solid rgba(${THEME.glowRgb},0.18)`,
             borderRadius: 28,
             padding: "68px 56px",
@@ -1158,7 +1163,7 @@ function CTA() {
           <p
             style={{
               fontSize: 17,
-              color: "#7A9A82",
+              color: "var(--lp-muted)",
               marginBottom: 36,
               position: "relative",
               zIndex: 1,
@@ -1195,7 +1200,7 @@ function Footer() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          borderTop: "1px solid rgba(255,255,255,0.05)",
+          borderTop: "1px solid var(--lp-border-soft)",
           paddingTop: 28,
           flexWrap: "wrap",
           gap: 16,
@@ -1206,22 +1211,22 @@ function Footer() {
             fontWeight: 700,
             fontSize: 17,
             letterSpacing: -0.5,
-            color: "#FFFFFF",
+            color: "var(--lp-text-strong)",
           }}
         >
           pip<span style={{ color: THEME.accent }}>p</span>ident
         </div>
-        <div style={{ fontSize: 12.5, color: "#2A3D2E" }}>
+        <div style={{ fontSize: 12.5, color: "var(--lp-dimmer)" }}>
           © 2026 Pippident. Tutti i diritti riservati.
         </div>
         <div style={{ display: "flex", gap: 20, fontSize: 12.5 }}>
-          <a href="#" style={{ color: "#3A5542", textDecoration: "none" }}>
+          <a href="#" style={{ color: "var(--lp-dim)", textDecoration: "none" }}>
             Privacy Policy
           </a>
-          <a href="#" style={{ color: "#3A5542", textDecoration: "none" }}>
+          <a href="#" style={{ color: "var(--lp-dim)", textDecoration: "none" }}>
             Termini di Servizio
           </a>
-          <Link href="/login" style={{ color: "#3A5542", textDecoration: "none" }}>
+          <Link href="/login" style={{ color: "var(--lp-dim)", textDecoration: "none" }}>
             Accedi
           </Link>
         </div>

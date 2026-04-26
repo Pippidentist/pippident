@@ -48,12 +48,115 @@
 }
 
 /* ============================================================
-   Pippident — cyan dark theme
-   Both :root and .dark map to the same dark palette so the app
-   stays in dark mode even if next-themes cycles classes.
+   Pippident — design tokens
+   :root  → light theme (default)
+   .dark  → dark theme (cyan)
    Token names follow shadcn conventions (consumed by ui/*).
+   next-themes toggles `class="dark"` / `class="light"` on <html>.
    ============================================================ */
-:root,
+:root {
+  --radius: 0.625rem;
+
+  /* Surfaces */
+  --background: #f7faf8;
+  --foreground: #0a1a14;
+  --card: #ffffff;
+  --card-foreground: #0a1a14;
+  --popover: #ffffff;
+  --popover-foreground: #0a1a14;
+
+  /* Primary — slightly deeper cyan for AA contrast on white */
+  --primary: #00a8bf;
+  --primary-foreground: #ffffff;
+
+  /* Secondary surfaces */
+  --secondary: #eef4f0;
+  --secondary-foreground: #0a1a14;
+  --muted: #eef4f0;
+  --muted-foreground: #4d6a5d;
+
+  /* Accent (used by hover states) */
+  --accent: #eef4f0;
+  --accent-foreground: #0a1a14;
+
+  /* Destructive */
+  --destructive: #d63b5b;
+  --destructive-foreground: #ffffff;
+
+  /* Borders / inputs / focus ring */
+  --border: rgba(0, 168, 191, 0.18);
+  --input: rgba(0, 168, 191, 0.25);
+  --ring: rgba(0, 168, 191, 0.55);
+
+  /* Charts (slightly darker hues for white bg) */
+  --chart-1: #00a8bf;
+  --chart-2: #11a35a;
+  --chart-3: #6f63d4;
+  --chart-4: #d65fa6;
+  --chart-5: #d49a4a;
+
+  /* Sidebar */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0a1a14;
+  --sidebar-primary: #00a8bf;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef4f0;
+  --sidebar-accent-foreground: #0a1a14;
+  --sidebar-border: rgba(0, 168, 191, 0.18);
+  --sidebar-ring: rgba(0, 168, 191, 0.5);
+
+  /* Pippident-specific */
+  --lp-glow-rgb: 0, 168, 191;
+  --lp-accent-emerald: #11a35a;
+
+  /* App-shell tints (used by header/sidebar/main bg layers) */
+  --app-mesh-1: rgba(0, 168, 191, 0.07);
+  --app-mesh-2: rgba(17, 163, 90, 0.05);
+  --app-grid: rgba(0, 168, 191, 0.04);
+  --app-deep-bg: #eef4f0;
+  --app-text-soft: #2c4338;
+  --app-text-mid: #4d6a5d;
+  --app-text-faint: #708877;
+  --app-icon-bg: rgba(0, 168, 191, 0.1);
+  --app-icon-border: rgba(0, 168, 191, 0.22);
+  --app-overlay: rgba(10, 26, 20, 0.5);
+  --app-header-bg: rgba(247, 250, 248, 0.78);
+  --app-sidebar-bg: rgba(255, 255, 255, 0.88);
+  --app-sidebar-border: rgba(0, 168, 191, 0.18);
+  --app-sidebar-divider: rgba(0, 168, 191, 0.12);
+  --app-sidebar-divider-soft: rgba(0, 168, 191, 0.08);
+  --app-hover-bg: rgba(10, 26, 20, 0.04);
+  --app-danger: #d63b5b;
+
+  /* Calendar status colors (light) */
+  --cal-confirmed-bg: rgba(17, 163, 90, 0.16);
+  --cal-confirmed-border: #11a35a;
+  --cal-confirmed-text: #064a25;
+  --cal-confirmed-glow: 0 0 12px rgba(17, 163, 90, 0.18);
+  --cal-pending-bg: rgba(204, 138, 0, 0.16);
+  --cal-pending-border: #cc8a00;
+  --cal-pending-text: #4a3000;
+  --cal-pending-glow: 0 0 12px rgba(204, 138, 0, 0.18);
+  --cal-completed-bg: rgba(112, 136, 119, 0.18);
+  --cal-completed-border: #708877;
+  --cal-completed-text: #2c4338;
+  --cal-completed-glow: 0 0 10px rgba(112, 136, 119, 0.16);
+  --cal-cancelled-bg: rgba(214, 59, 91, 0.14);
+  --cal-cancelled-border: #d63b5b;
+  --cal-cancelled-text: #5a0d20;
+  --cal-cancelled-glow: 0 0 12px rgba(214, 59, 91, 0.18);
+  --cal-noshow-bg: rgba(217, 95, 36, 0.16);
+  --cal-noshow-border: #d95f24;
+  --cal-noshow-text: #5a200a;
+  --cal-noshow-glow: 0 0 12px rgba(217, 95, 36, 0.18);
+  --cal-today-bg: rgba(0, 168, 191, 0.07);
+  --cal-hover-bg: rgba(0, 168, 191, 0.05);
+  --cal-cell-divider: rgba(0, 168, 191, 0.06);
+  --cal-closed-overlay: rgba(10, 26, 20, 0.05);
+  --cal-closed-pattern: rgba(112, 136, 119, 0.1);
+  --cal-event-shadow: 0 4px 12px rgba(10, 26, 20, 0.12);
+}
+
 .dark {
   --radius: 0.625rem;
 
@@ -108,6 +211,53 @@
   /* Pippident-specific */
   --lp-glow-rgb: 0, 229, 255;
   --lp-accent-emerald: #00ff7f;
+
+  /* App-shell tints */
+  --app-mesh-1: rgba(0, 229, 255, 0.06);
+  --app-mesh-2: rgba(0, 255, 159, 0.04);
+  --app-grid: rgba(0, 229, 255, 0.02);
+  --app-deep-bg: #03060a;
+  --app-text-soft: #aacbb5;
+  --app-text-mid: #7a9a82;
+  --app-text-faint: #5a7a62;
+  --app-icon-bg: rgba(0, 229, 255, 0.12);
+  --app-icon-border: rgba(0, 229, 255, 0.22);
+  --app-overlay: rgba(0, 0, 0, 0.5);
+  --app-header-bg: rgba(5, 9, 15, 0.7);
+  --app-sidebar-bg: rgba(12, 21, 32, 0.85);
+  --app-sidebar-border: rgba(0, 229, 255, 0.1);
+  --app-sidebar-divider: rgba(0, 229, 255, 0.08);
+  --app-sidebar-divider-soft: rgba(0, 229, 255, 0.06);
+  --app-hover-bg: rgba(255, 255, 255, 0.04);
+  --app-danger: #ff5577;
+
+  /* Calendar status colors (dark) */
+  --cal-confirmed-bg: rgba(0, 255, 127, 0.22);
+  --cal-confirmed-border: #00ff7f;
+  --cal-confirmed-text: #c8ffe0;
+  --cal-confirmed-glow: 0 0 12px rgba(0, 255, 127, 0.25);
+  --cal-pending-bg: rgba(255, 193, 7, 0.22);
+  --cal-pending-border: #ffc107;
+  --cal-pending-text: #ffe9a8;
+  --cal-pending-glow: 0 0 12px rgba(255, 193, 7, 0.25);
+  --cal-completed-bg: rgba(122, 154, 130, 0.22);
+  --cal-completed-border: #7a9a82;
+  --cal-completed-text: #d8e5db;
+  --cal-completed-glow: 0 0 10px rgba(122, 154, 130, 0.18);
+  --cal-cancelled-bg: rgba(255, 85, 119, 0.22);
+  --cal-cancelled-border: #ff5577;
+  --cal-cancelled-text: #ffd1dc;
+  --cal-cancelled-glow: 0 0 12px rgba(255, 85, 119, 0.25);
+  --cal-noshow-bg: rgba(255, 138, 80, 0.22);
+  --cal-noshow-border: #ff8a50;
+  --cal-noshow-text: #ffd9c2;
+  --cal-noshow-glow: 0 0 12px rgba(255, 138, 80, 0.25);
+  --cal-today-bg: rgba(0, 229, 255, 0.08);
+  --cal-hover-bg: rgba(0, 229, 255, 0.05);
+  --cal-cell-divider: rgba(0, 229, 255, 0.05);
+  --cal-closed-overlay: rgba(5, 9, 15, 0.35);
+  --cal-closed-pattern: rgba(122, 154, 130, 0.06);
+  --cal-event-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 @layer base {
@@ -140,8 +290,8 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 70% 55% at 15% 25%, rgba(0, 229, 255, 0.06) 0%, transparent 65%),
-    radial-gradient(ellipse 55% 55% at 88% 75%, rgba(0, 255, 159, 0.04) 0%, transparent 65%);
+    radial-gradient(ellipse 70% 55% at 15% 25%, var(--app-mesh-1) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 55% at 88% 75%, var(--app-mesh-2) 0%, transparent 65%);
   animation: lp-meshPulse 12s ease-in-out infinite alternate;
 }
 
@@ -151,8 +301,8 @@
   z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(0, 229, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 229, 255, 0.02) 1px, transparent 1px);
+    linear-gradient(var(--app-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--app-grid) 1px, transparent 1px);
   background-size: 64px 64px;
 }
 
@@ -170,131 +320,188 @@
 
 /* ── Override hardcoded Tailwind palette inside the app shell ──
    The existing pages were authored against a light blue palette.
-   We remap those literal classes to the cyan-dark token system so
-   pages render correctly without per-page edits. */
+   In dark mode we remap those literal classes to the cyan-dark token
+   system so pages render correctly without per-page edits.
+   In light mode the original Tailwind colors render naturally —
+   so all these overrides are scoped under html.dark. */
 
-.app-shell .bg-white {
+html.dark .app-shell .bg-white {
   background-color: var(--card) !important;
 }
-.app-shell .bg-gray-50 {
+html.dark .app-shell .bg-gray-50 {
   background-color: var(--background) !important;
 }
-.app-shell .bg-gray-100 {
+html.dark .app-shell .bg-gray-100 {
   background-color: var(--secondary) !important;
 }
-.app-shell .bg-gray-200 {
+html.dark .app-shell .bg-gray-200 {
   background-color: var(--secondary) !important;
 }
-.app-shell .bg-gray-900 {
+html.dark .app-shell .bg-gray-900 {
   background-color: #03060a !important;
 }
 
-.app-shell .text-gray-900,
-.app-shell .text-black {
+html.dark .app-shell .text-gray-900,
+html.dark .app-shell .text-black {
   color: var(--foreground) !important;
 }
-.app-shell .text-gray-700,
-.app-shell .text-gray-800 {
+html.dark .app-shell .text-gray-700,
+html.dark .app-shell .text-gray-800 {
   color: var(--foreground) !important;
 }
-.app-shell .text-gray-600 {
+html.dark .app-shell .text-gray-600 {
   color: #aacbb5 !important;
 }
-.app-shell .text-gray-500 {
+html.dark .app-shell .text-gray-500 {
   color: var(--muted-foreground) !important;
 }
-.app-shell .text-gray-400 {
+html.dark .app-shell .text-gray-400 {
   color: #5a7a62 !important;
 }
 
-.app-shell .bg-blue-50,
-.app-shell .bg-blue-100 {
+html.dark .app-shell .bg-blue-50,
+html.dark .app-shell .bg-blue-100 {
   background-color: rgba(0, 229, 255, 0.08) !important;
 }
-.app-shell .bg-blue-500,
-.app-shell .bg-blue-600,
-.app-shell .bg-blue-700 {
+html.dark .app-shell .bg-blue-500,
+html.dark .app-shell .bg-blue-600,
+html.dark .app-shell .bg-blue-700 {
   background-color: var(--primary) !important;
   color: var(--primary-foreground) !important;
 }
-.app-shell .hover\:bg-blue-700:hover,
-.app-shell .hover\:bg-blue-600:hover,
-.app-shell .hover\:bg-blue-50:hover {
+html.dark .app-shell .hover\:bg-blue-700:hover,
+html.dark .app-shell .hover\:bg-blue-600:hover,
+html.dark .app-shell .hover\:bg-blue-50:hover {
   background-color: rgba(0, 229, 255, 0.85) !important;
 }
 
-.app-shell .text-blue-50,
-.app-shell .text-blue-100,
-.app-shell .text-blue-200,
-.app-shell .text-blue-300,
-.app-shell .text-blue-400,
-.app-shell .text-blue-500,
-.app-shell .text-blue-600,
-.app-shell .text-blue-700 {
+html.dark .app-shell .text-blue-50,
+html.dark .app-shell .text-blue-100,
+html.dark .app-shell .text-blue-200,
+html.dark .app-shell .text-blue-300,
+html.dark .app-shell .text-blue-400,
+html.dark .app-shell .text-blue-500,
+html.dark .app-shell .text-blue-600,
+html.dark .app-shell .text-blue-700 {
   color: var(--primary) !important;
 }
-.app-shell .hover\:text-blue-600:hover,
-.app-shell .hover\:text-blue-700:hover {
+html.dark .app-shell .hover\:text-blue-600:hover,
+html.dark .app-shell .hover\:text-blue-700:hover {
   color: var(--primary) !important;
 }
 
-.app-shell .border-gray-100,
-.app-shell .border-gray-200 {
+html.dark .app-shell .border-gray-100,
+html.dark .app-shell .border-gray-200 {
   border-color: var(--border) !important;
 }
-.app-shell .border-blue-200 {
+html.dark .app-shell .border-blue-200 {
   border-color: rgba(0, 229, 255, 0.3) !important;
 }
 
-/* Green / red accents used in WhatsApp / status states */
-.app-shell .bg-green-50 {
-  background-color: rgba(0, 255, 127, 0.08) !important;
+/* ── Light-mode brand remap ──
+   Pages use Tailwind's blue/indigo for brand-coloured text and CTAs.
+   Default Tailwind blue clashes with the cyan brand, so remap those
+   classes to --primary (cyan) in light mode too. Greys / greens / reds
+   keep their natural Tailwind look. */
+
+html:not(.dark) .app-shell .bg-blue-50,
+html:not(.dark) .app-shell .bg-blue-100 {
+  background-color: rgba(var(--lp-glow-rgb), 0.08) !important;
 }
-.app-shell .bg-emerald-50 {
-  background-color: rgba(0, 255, 127, 0.06) !important;
+html:not(.dark) .app-shell .bg-blue-500,
+html:not(.dark) .app-shell .bg-blue-600,
+html:not(.dark) .app-shell .bg-blue-700 {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
 }
-.app-shell .bg-green-100 {
-  background-color: rgba(0, 255, 127, 0.12) !important;
-}
-.app-shell .text-green-500,
-.app-shell .text-green-600,
-.app-shell .text-green-700 {
-  color: var(--lp-accent-emerald) !important;
+html:not(.dark) .app-shell .hover\:bg-blue-700:hover,
+html:not(.dark) .app-shell .hover\:bg-blue-600:hover,
+html:not(.dark) .app-shell .hover\:bg-blue-50:hover {
+  background-color: rgba(var(--lp-glow-rgb), 0.85) !important;
 }
 
-.app-shell .bg-indigo-50 {
-  background-color: rgba(0, 229, 255, 0.06) !important;
+html:not(.dark) .app-shell .text-blue-50,
+html:not(.dark) .app-shell .text-blue-100,
+html:not(.dark) .app-shell .text-blue-200,
+html:not(.dark) .app-shell .text-blue-300,
+html:not(.dark) .app-shell .text-blue-400,
+html:not(.dark) .app-shell .text-blue-500,
+html:not(.dark) .app-shell .text-blue-600,
+html:not(.dark) .app-shell .text-blue-700 {
+  color: var(--primary) !important;
 }
-.app-shell .bg-indigo-100 {
-  background-color: rgba(0, 229, 255, 0.1) !important;
-}
-.app-shell .text-indigo-400,
-.app-shell .text-indigo-500,
-.app-shell .text-indigo-600,
-.app-shell .text-indigo-700 {
+html:not(.dark) .app-shell .hover\:text-blue-600:hover,
+html:not(.dark) .app-shell .hover\:text-blue-700:hover {
   color: var(--primary) !important;
 }
 
-.app-shell .bg-red-50 {
+html:not(.dark) .app-shell .border-blue-200 {
+  border-color: rgba(var(--lp-glow-rgb), 0.3) !important;
+}
+
+html:not(.dark) .app-shell .bg-indigo-50 {
+  background-color: rgba(var(--lp-glow-rgb), 0.06) !important;
+}
+html:not(.dark) .app-shell .bg-indigo-100 {
+  background-color: rgba(var(--lp-glow-rgb), 0.1) !important;
+}
+html:not(.dark) .app-shell .text-indigo-400,
+html:not(.dark) .app-shell .text-indigo-500,
+html:not(.dark) .app-shell .text-indigo-600,
+html:not(.dark) .app-shell .text-indigo-700 {
+  color: var(--primary) !important;
+}
+
+/* Green / red accents used in WhatsApp / status states */
+html.dark .app-shell .bg-green-50 {
+  background-color: rgba(0, 255, 127, 0.08) !important;
+}
+html.dark .app-shell .bg-emerald-50 {
+  background-color: rgba(0, 255, 127, 0.06) !important;
+}
+html.dark .app-shell .bg-green-100 {
+  background-color: rgba(0, 255, 127, 0.12) !important;
+}
+html.dark .app-shell .text-green-500,
+html.dark .app-shell .text-green-600,
+html.dark .app-shell .text-green-700 {
+  color: var(--lp-accent-emerald) !important;
+}
+
+html.dark .app-shell .bg-indigo-50 {
+  background-color: rgba(0, 229, 255, 0.06) !important;
+}
+html.dark .app-shell .bg-indigo-100 {
+  background-color: rgba(0, 229, 255, 0.1) !important;
+}
+html.dark .app-shell .text-indigo-400,
+html.dark .app-shell .text-indigo-500,
+html.dark .app-shell .text-indigo-600,
+html.dark .app-shell .text-indigo-700 {
+  color: var(--primary) !important;
+}
+
+html.dark .app-shell .bg-red-50 {
   background-color: rgba(255, 85, 119, 0.1) !important;
 }
-.app-shell .text-red-600,
-.app-shell .text-red-500 {
+html.dark .app-shell .text-red-600,
+html.dark .app-shell .text-red-500 {
   color: var(--destructive) !important;
 }
-.app-shell .border-red-200 {
+html.dark .app-shell .border-red-200 {
   border-color: rgba(255, 85, 119, 0.3) !important;
 }
 
-/* Inputs in dark mode look better with a subtle dark surface */
-.app-shell input,
-.app-shell textarea,
-.app-shell select {
+/* Inputs — give a subtle surface in both themes (Tailwind defaults are fine in light;
+   in dark we want the secondary surface so the cursor/text is readable). */
+html.dark .app-shell input,
+html.dark .app-shell textarea,
+html.dark .app-shell select {
   background-color: var(--secondary);
   color: var(--foreground);
 }
-.app-shell input::placeholder,
-.app-shell textarea::placeholder {
+html.dark .app-shell input::placeholder,
+html.dark .app-shell textarea::placeholder {
   color: var(--muted-foreground);
 }
 
@@ -335,15 +542,15 @@
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  border: 1px solid rgba(0, 229, 255, 0.15);
-  background: rgba(0, 229, 255, 0.05);
-  color: #7a9a82;
+  border: 1px solid rgba(var(--lp-glow-rgb), 0.15);
+  background: rgba(var(--lp-glow-rgb), 0.05);
+  color: var(--app-text-mid);
   cursor: pointer;
   transition: all 0.15s;
 }
 .sidebar-close:hover {
-  color: #eef8f1;
-  background: rgba(0, 229, 255, 0.1);
+  color: var(--foreground);
+  background: rgba(var(--lp-glow-rgb), 0.1);
 }
 /* Backdrop — hidden on desktop, visible behind drawer on mobile */
 .sidebar-backdrop {
@@ -367,15 +574,15 @@
   width: 38px;
   height: 38px;
   border-radius: 8px;
-  border: 1px solid rgba(0, 229, 255, 0.15);
-  background: rgba(0, 229, 255, 0.05);
-  color: #eef8f1;
+  border: 1px solid rgba(var(--lp-glow-rgb), 0.15);
+  background: rgba(var(--lp-glow-rgb), 0.05);
+  color: var(--foreground);
   cursor: pointer;
   transition: all 0.15s;
 }
 .header-hamburger:hover {
-  background: rgba(0, 229, 255, 0.1);
-  border-color: rgba(0, 229, 255, 0.25);
+  background: rgba(var(--lp-glow-rgb), 0.1);
+  border-color: rgba(var(--lp-glow-rgb), 0.25);
 }
 
 /* Dashboard <main> — desktop = leave room for the fixed sidebar/header */
@@ -391,7 +598,7 @@
 @media (max-width: 767px) {
   .sidebar-shell {
     transform: translateX(-100%);
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 40px var(--app-overlay);
   }
   .sidebar-shell[data-open="true"] {
     transform: translateX(0);
@@ -404,7 +611,7 @@
     position: fixed;
     inset: 0;
     z-index: 55;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--app-overlay);
     backdrop-filter: blur(2px);
     opacity: 0;
     pointer-events: none;
@@ -440,11 +647,11 @@
   background: transparent;
 }
 .app-shell [data-slot="table-container"]::-webkit-scrollbar-thumb {
-  background: rgba(0, 229, 255, 0.25);
+  background: rgba(var(--lp-glow-rgb), 0.25);
   border-radius: 3px;
 }
 .app-shell [data-slot="table-container"]::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 255, 0.4);
+  background: rgba(var(--lp-glow-rgb), 0.4);
 }
 
 /* ============================================================
@@ -453,19 +660,35 @@
    ============================================================ */
 
 .landing {
-  /* Design tokens — cyan theme */
+  /* Design tokens — cyan dark theme (default) */
   --lp-accent: #00e5ff;
   --lp-accent2: #00ff9f;
   --lp-bg: #05090f;
   --lp-surface: #0c1520;
   --lp-surface2: #101c28;
   --lp-text: #eef8f1;
+  --lp-text-strong: #ffffff;
+  --lp-text-soft: #aacbb5;
   --lp-muted: #7a9a82;
+  --lp-muted2: #5a7a62;
   --lp-dim: #3a5542;
+  --lp-dimmer: #2a3d2e;
+  --lp-whatsapp: #00ff7f;
+  --lp-whatsapp-rgb: 0, 255, 127;
   --lp-glow: rgba(0, 229, 255, 0.15);
   --lp-glow-rgb: 0, 229, 255;
   --lp-border: rgba(0, 229, 255, 0.08);
   --lp-border2: rgba(255, 255, 255, 0.06);
+  --lp-border-soft: rgba(255, 255, 255, 0.05);
+  --lp-nav-bg: rgba(5, 9, 15, 0.75);
+  --lp-bubble-bg: rgba(10, 18, 12, 0.92);
+  --lp-bubble-bg-soft: rgba(10, 18, 12, 0.88);
+  --lp-robot-bg: linear-gradient(145deg, #111a13, #0d1610);
+  --lp-robot-screen: #0d1610;
+  --lp-ghost-border: rgba(255, 255, 255, 0.12);
+  --lp-ghost-border-hover: rgba(255, 255, 255, 0.25);
+  --lp-ghost-bg-hover: rgba(255, 255, 255, 0.04);
+  --lp-shadow: rgba(0, 0, 0, 0.65);
 
   background: var(--lp-bg);
   color: var(--lp-text);
@@ -474,6 +697,51 @@
   overflow-x: hidden;
   min-height: 100vh;
   position: relative;
+}
+
+/* Light theme — only applied to .landing when <html class="light"> */
+html:not(.dark) .landing {
+  --lp-accent: #00a8bf;
+  --lp-accent2: #00b86a;
+  --lp-bg: #f7faf8;
+  --lp-surface: #ffffff;
+  --lp-surface2: #eef4f0;
+  --lp-text: #0a1a14;
+  --lp-text-strong: #000000;
+  --lp-text-soft: #2c4338;
+  --lp-muted: #4d6a5d;
+  --lp-muted2: #708877;
+  --lp-dim: #93a89c;
+  --lp-dimmer: #b9c8be;
+  --lp-whatsapp: #11a35a;
+  --lp-whatsapp-rgb: 17, 163, 90;
+  --lp-glow: rgba(0, 168, 191, 0.18);
+  --lp-glow-rgb: 0, 168, 191;
+  --lp-border: rgba(0, 168, 191, 0.18);
+  --lp-border2: rgba(10, 26, 20, 0.08);
+  --lp-border-soft: rgba(10, 26, 20, 0.07);
+  --lp-nav-bg: rgba(247, 250, 248, 0.78);
+  --lp-bubble-bg: rgba(255, 255, 255, 0.94);
+  --lp-bubble-bg-soft: rgba(255, 255, 255, 0.88);
+  --lp-robot-bg: linear-gradient(145deg, #f4f9f6, #e7efe9);
+  --lp-robot-screen: #f4f9f6;
+  --lp-ghost-border: rgba(10, 26, 20, 0.14);
+  --lp-ghost-border-hover: rgba(10, 26, 20, 0.3);
+  --lp-ghost-bg-hover: rgba(10, 26, 20, 0.04);
+  --lp-shadow: rgba(10, 26, 20, 0.18);
+}
+
+/* Override the fixed mesh + grid backgrounds so the light theme has
+   the right glow tint — they reference the cyan rgb literally. */
+html:not(.dark) .landing .bg-mesh {
+  background:
+    radial-gradient(ellipse 70% 55% at 15% 25%, rgba(0, 168, 191, 0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 55% at 88% 75%, rgba(17, 163, 90, 0.06) 0%, transparent 65%);
+}
+html:not(.dark) .landing .bg-grid {
+  background-image:
+    linear-gradient(rgba(0, 168, 191, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 168, 191, 0.04) 1px, transparent 1px);
 }
 
 .landing a {
@@ -577,10 +845,10 @@
   gap: 36px;
   padding: 13px 24px;
   width: min(940px, calc(100% - 32px));
-  background: rgba(5, 9, 15, 0.75);
+  background: var(--lp-nav-bg);
   backdrop-filter: blur(24px) saturate(1.5);
   -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  border: 1px solid rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(var(--lp-glow-rgb), 0.12);
   border-radius: 60px;
 }
 .landing .lp-nav-logo {
@@ -659,13 +927,13 @@
   font-weight: 600;
   font-size: 15px;
   text-decoration: none;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--lp-ghost-border);
   cursor: pointer;
   transition: all 0.25s;
 }
 .landing .btn-ghost:hover {
-  border-color: rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--lp-ghost-border-hover);
+  background: var(--lp-ghost-bg-hover);
 }
 
 /* Badges */
@@ -694,9 +962,9 @@
   border: 1px solid rgba(0, 255, 159, 0.18);
 }
 .landing .lp-badge-text {
-  background: rgba(238, 248, 241, 0.06);
+  background: var(--lp-ghost-bg-hover);
   color: var(--lp-text);
-  border: 1px solid rgba(238, 248, 241, 0.14);
+  border: 1px solid var(--lp-ghost-border);
 }
 
 /* Phone frame */

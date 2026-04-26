@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Search, X } from "lucide-react";
+import { Search, X, ChevronDown } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
   confirmed: "Confermato",
@@ -335,15 +335,18 @@ export function AppointmentModal({
                 <FormItem>
                   <FormLabel>Dentista *</FormLabel>
                   <FormControl>
-                    <select
-                      className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm"
-                      value={field.value}
-                      onChange={field.onChange}
-                    >
-                      {dentists.map((d) => (
-                        <option key={d.id} value={d.id}>{d.fullName}</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        className="w-full appearance-none border border-gray-200 rounded-md pl-3 pr-9 py-2 text-sm bg-transparent"
+                        value={field.value}
+                        onChange={field.onChange}
+                      >
+                        {dentists.map((d) => (
+                          <option key={d.id} value={d.id}>{d.fullName}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -353,16 +356,19 @@ export function AppointmentModal({
             {/* Tipo visita */}
             <FormItem>
               <FormLabel>Tipo di visita</FormLabel>
-              <select
-                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm"
-                value={form.watch("treatmentTypeId") ?? ""}
-                onChange={(e) => handleTreatmentChange(e.target.value)}
-              >
-                <option value="">— Seleziona tipo visita —</option>
-                {treatmentTypes.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name} ({t.defaultDurationMinutes} min)</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  className="w-full appearance-none border border-gray-200 rounded-md pl-3 pr-9 py-2 text-sm bg-transparent"
+                  value={form.watch("treatmentTypeId") ?? ""}
+                  onChange={(e) => handleTreatmentChange(e.target.value)}
+                >
+                  <option value="">— Seleziona tipo visita —</option>
+                  {treatmentTypes.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name} ({t.defaultDurationMinutes} min)</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
+              </div>
             </FormItem>
 
             {/* Data/ora */}
@@ -404,15 +410,18 @@ export function AppointmentModal({
                   <FormItem>
                     <FormLabel>Stato</FormLabel>
                     <FormControl>
-                      <select
-                        className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm"
-                        value={field.value}
-                        onChange={field.onChange}
-                      >
-                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        <select
+                          className="w-full appearance-none border border-gray-200 rounded-md pl-3 pr-9 py-2 text-sm bg-transparent"
+                          value={field.value}
+                          onChange={field.onChange}
+                        >
+                          {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

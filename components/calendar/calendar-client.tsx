@@ -39,42 +39,40 @@ interface AppointmentItem {
   treatmentName?: string | null;
 }
 
-// Vivid event colors with high-contrast text — same hue families as before,
-// just bumped to be visible against the dark cyan background. Inline styles
-// (not Tailwind classes) so they bypass the .app-shell override layer.
+// Event color tokens are defined in globals.css and switch with theme.
 const STATUS_STYLES: Record<
   string,
   { bg: string; border: string; text: string; glow: string }
 > = {
   confirmed: {
-    bg: "rgba(0, 255, 127, 0.22)",
-    border: "#00FF7F",
-    text: "#C8FFE0",
-    glow: "0 0 12px rgba(0, 255, 127, 0.25)",
+    bg: "var(--cal-confirmed-bg)",
+    border: "var(--cal-confirmed-border)",
+    text: "var(--cal-confirmed-text)",
+    glow: "var(--cal-confirmed-glow)",
   },
   pending: {
-    bg: "rgba(255, 193, 7, 0.22)",
-    border: "#FFC107",
-    text: "#FFE9A8",
-    glow: "0 0 12px rgba(255, 193, 7, 0.25)",
+    bg: "var(--cal-pending-bg)",
+    border: "var(--cal-pending-border)",
+    text: "var(--cal-pending-text)",
+    glow: "var(--cal-pending-glow)",
   },
   completed: {
-    bg: "rgba(122, 154, 130, 0.22)",
-    border: "#7A9A82",
-    text: "#D8E5DB",
-    glow: "0 0 10px rgba(122, 154, 130, 0.18)",
+    bg: "var(--cal-completed-bg)",
+    border: "var(--cal-completed-border)",
+    text: "var(--cal-completed-text)",
+    glow: "var(--cal-completed-glow)",
   },
   cancelled: {
-    bg: "rgba(255, 85, 119, 0.22)",
-    border: "#FF5577",
-    text: "#FFD1DC",
-    glow: "0 0 12px rgba(255, 85, 119, 0.25)",
+    bg: "var(--cal-cancelled-bg)",
+    border: "var(--cal-cancelled-border)",
+    text: "var(--cal-cancelled-text)",
+    glow: "var(--cal-cancelled-glow)",
   },
   no_show: {
-    bg: "rgba(255, 138, 80, 0.22)",
-    border: "#FF8A50",
-    text: "#FFD9C2",
-    glow: "0 0 12px rgba(255, 138, 80, 0.25)",
+    bg: "var(--cal-noshow-bg)",
+    border: "var(--cal-noshow-border)",
+    text: "var(--cal-noshow-text)",
+    glow: "var(--cal-noshow-glow)",
   },
 };
 
@@ -327,13 +325,13 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
                 key={day.toISOString()}
                 className="text-center py-2 text-sm cursor-pointer transition-colors"
                 style={{
-                  background: isToday ? "rgba(0, 229, 255, 0.08)" : "transparent",
+                  background: isToday ? "var(--cal-today-bg)" : "transparent",
                   opacity: dayClosed ? 0.55 : 1,
                   minWidth: 0,
                 }}
                 onMouseEnter={(e) => {
                   if (!isToday) {
-                    e.currentTarget.style.background = "rgba(0, 229, 255, 0.05)";
+                    e.currentTarget.style.background = "var(--cal-cell-divider)";
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -383,7 +381,7 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
                 className="text-xs pr-2 text-right"
                 style={{
                   height: HOUR_HEIGHT,
-                  borderBottom: "1px solid rgba(0, 229, 255, 0.05)",
+                  borderBottom: "1px solid var(--cal-cell-divider)",
                   color: "var(--muted-foreground)",
                 }}
               >
@@ -406,7 +404,7 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
                   height: HOURS.length * HOUR_HEIGHT,
                   borderRight: "1px solid var(--border)",
                   background: isToday
-                    ? "rgba(0, 229, 255, 0.03)"
+                    ? "var(--cal-hover-bg)"
                     : "transparent",
                 }}
               >
@@ -416,8 +414,8 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
                     className="absolute inset-0 pointer-events-none"
                     style={{
                       backgroundImage:
-                        "repeating-linear-gradient(45deg, rgba(122, 154, 130, 0.06) 0 6px, transparent 6px 12px)",
-                      backgroundColor: "rgba(5, 9, 15, 0.35)",
+                        "repeating-linear-gradient(45deg, var(--cal-closed-pattern) 0 6px, transparent 6px 12px)",
+                      backgroundColor: "var(--cal-closed-overlay)",
                     }}
                   />
                 )}
@@ -432,16 +430,16 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
                       style={{
                         top: (hour - 8) * HOUR_HEIGHT,
                         height: HOUR_HEIGHT,
-                        borderBottom: "1px solid rgba(0, 229, 255, 0.05)",
+                        borderBottom: "1px solid var(--cal-cell-divider)",
                         cursor: slotOpen ? "pointer" : "not-allowed",
                         background: slotOpen
                           ? "transparent"
-                          : "repeating-linear-gradient(45deg, rgba(122, 154, 130, 0.05) 0 6px, transparent 6px 12px)",
+                          : "repeating-linear-gradient(45deg, var(--cal-closed-pattern) 0 6px, transparent 6px 12px)",
                       }}
                       onMouseEnter={(e) => {
                         if (slotOpen) {
                           e.currentTarget.style.background =
-                            "rgba(0, 229, 255, 0.08)";
+                            "var(--cal-today-bg)";
                         }
                       }}
                       onMouseLeave={(e) => {
@@ -476,7 +474,7 @@ export function CalendarClient({ dentists, treatmentTypes, currentUserId, curren
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = "translateY(-1px)";
-                        e.currentTarget.style.boxShadow = `${s.glow}, 0 4px 12px rgba(0,0,0,0.3)`;
+                        e.currentTarget.style.boxShadow = `${s.glow}, var(--cal-event-shadow)`;
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = "translateY(0)";

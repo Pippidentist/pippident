@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut, User, Menu } from "lucide-react";
 import Link from "next/link";
 import { useMobileNav } from "./mobile-nav-context";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const roleLabels: Record<string, string> = {
   super_admin: "Super Admin",
@@ -41,10 +42,10 @@ export function Header() {
     <header
       className="header-shell flex items-center justify-between px-4 sm:px-6"
       style={{
-        background: "rgba(5, 9, 15, 0.7)",
+        background: "var(--app-header-bg)",
         backdropFilter: "blur(20px) saturate(1.5)",
         WebkitBackdropFilter: "blur(20px) saturate(1.5)",
-        borderBottom: "1px solid rgba(0, 229, 255, 0.08)",
+        borderBottom: "1px solid var(--border)",
       }}
     >
       {/* Left side — hamburger on mobile only */}
@@ -59,20 +60,21 @@ export function Header() {
         </button>
         <div
           className="hidden sm:flex items-center gap-2 text-sm"
-          style={{ color: "#7A9A82" }}
+          style={{ color: "var(--app-text-mid)" }}
         >
           {/* Breadcrumb placeholder */}
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors"
-              style={{ color: "#EEF8F1" }}
+              style={{ color: "var(--foreground)" }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+                e.currentTarget.style.background = "var(--app-hover-bg)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
@@ -83,7 +85,7 @@ export function Header() {
                   style={{
                     fontSize: 13.5,
                     fontWeight: 600,
-                    color: "#EEF8F1",
+                    color: "var(--foreground)",
                     margin: 0,
                   }}
                 >
@@ -92,7 +94,7 @@ export function Header() {
                 <p
                   style={{
                     fontSize: 11.5,
-                    color: "#7A9A82",
+                    color: "var(--app-text-mid)",
                     margin: 0,
                   }}
                 >
@@ -102,9 +104,9 @@ export function Header() {
               <Avatar className="h-8 w-8">
                 <AvatarFallback
                   style={{
-                    background: "rgba(0, 229, 255, 0.12)",
-                    border: "1px solid rgba(0, 229, 255, 0.22)",
-                    color: "#00E5FF",
+                    background: "var(--app-icon-bg)",
+                    border: "1px solid var(--app-icon-border)",
+                    color: "var(--primary)",
                     fontSize: 11,
                     fontWeight: 700,
                   }}
@@ -117,7 +119,10 @@ export function Header() {
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>
               <p className="font-medium">{user?.name}</p>
-              <p className="text-xs font-normal" style={{ color: "#7A9A82" }}>
+              <p
+                className="text-xs font-normal"
+                style={{ color: "var(--app-text-mid)" }}
+              >
                 {user?.email}
               </p>
             </DropdownMenuLabel>
@@ -135,7 +140,7 @@ export function Header() {
             <DropdownMenuItem
               onClick={() => signOut({ callbackUrl: "/login" })}
               className="cursor-pointer"
-              style={{ color: "#ff5577" }}
+              style={{ color: "var(--app-danger)" }}
             >
               <LogOut className="h-4 w-4 mr-2" />
               Esci

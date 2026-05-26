@@ -9,6 +9,7 @@ import {
 } from "@/lib/db/schema";
 import { eq, and, gte, lte, or, sql } from "drizzle-orm";
 import type { Studio, Patient } from "@/lib/db/schema";
+import { preferredTimeTier, sortSlotsByPreference } from "@/lib/scheduling/time-preference";
 
 /** Formats a UTC Date as Italian label in Europe/Rome timezone (timezone-safe on Vercel) */
 function formatRomeLabel(date: Date): string {
@@ -154,12 +155,14 @@ export function buildTools(studio: Studio, patient: Patient) {
       // Get treatment duration
       let durationMinutes = 30;
       let treatmentName = "Visita";
+      let treatmentCategory: string | null = null;
 
       if (treatmentId) {
         const [treatment] = await db
           .select({
             defaultDurationMinutes: treatmentTypes.defaultDurationMinutes,
             name: treatmentTypes.name,
+            category: treatmentTypes.category,
           })
           .from(treatmentTypes)
           .where(
@@ -173,6 +176,7 @@ export function buildTools(studio: Studio, patient: Patient) {
         if (treatment) {
           durationMinutes = treatment.defaultDurationMinutes;
           treatmentName = treatment.name;
+          treatmentCategory = treatment.category ?? null;
         }
       }
 
@@ -296,12 +300,17 @@ export function buildTools(studio: Studio, patient: Patient) {
         }
       }
 
+      // Surface preferred-time slots first (complex → morning, light → afternoon).
+      // Falls back to chronological order for unmatched treatments.
+      const tier = preferredTimeTier(treatmentName, treatmentCategory);
+      const sortedSlots = sortSlotsByPreference(slots, tier);
+
       return {
-        slots,
+        slots: sortedSlots,
         treatmentName,
         durationMinutes,
         message:
-          slots.length === 0
+          sortedSlots.length === 0
             ? targetDate
               ? `Nessuno slot disponibile il ${targetDate}. Lo studio potrebbe essere chiuso o tutti i posti sono occupati.`
               : `Nessuno slot disponibile nei prossimi ${daysAhead} giorni.`

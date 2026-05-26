@@ -191,12 +191,27 @@ export async function handleChatCompletions(req: NextRequest): Promise<Response>
   // (e.g. "claude-sonnet-4-6") for A/B testing without redeploy.
   const modelId = process.env.PIPPIVOICE_MODEL || "claude-haiku-4-5-20251001";
 
+  // Prompt caching: pin the system message (KB + studio + patient + dates) so
+  // it's reused across turns of the same call. After the first turn, Anthropic
+  // reads from cache (~10% of normal input cost, ~50-70% less TTFT). System
+  // prompt is ~6000 tokens — the dominant cost without caching.
+  const messagesWithCachedSystem: CoreMessage[] = [
+    {
+      role: "system",
+      content: systemPrompt,
+      providerOptions: {
+        anthropic: { cacheControl: { type: "ephemeral" } },
+      },
+    },
+    ...coreMessages,
+  ];
+
   const result = streamText({
     model: anthropic(modelId),
-    system: systemPrompt,
-    messages: coreMessages,
+    messages: messagesWithCachedSystem,
     tools,
-    maxSteps: 10,
+    maxSteps: 6,        // safe cap; worst case flow is 3 tool calls
+    maxTokens: 300,     // voice replies are 1-2 short sentences; cap prevents runaway prose
     temperature: 0.4,
   });
 

@@ -27,6 +27,9 @@ export const studios = pgTable("studios", {
   whatsappPhoneNumberId: varchar("whatsapp_phone_number_id", { length: 100 }),
   whatsappToken: text("whatsapp_token"),
   twilioPhoneFrom: varchar("twilio_phone_from", { length: 50 }),
+  // Numero Twilio (E.164, es. +13203313961) usato dal voice agent Pippivoice
+  // per identificare lo studio quando arriva una chiamata.
+  voicePhoneNumber: varchar("voice_phone_number", { length: 50 }),
   settings: jsonb("settings").$type<{
     openingHours?: Record<string, { open: string; close: string }>;
     whatsappTemplates?: Record<string, string>;

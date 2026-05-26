@@ -16,6 +16,7 @@ const updateSchema = z.object({
   twilioPhoneFrom: z.string().optional().nullable(),
   whatsappPhoneNumberId: z.string().optional().nullable(),
   whatsappToken: z.string().optional().nullable(),
+  voicePhoneNumber: z.string().optional().nullable(),
   openingHours: z
     .record(z.string(), z.object({ open: z.string(), close: z.string() }))
     .optional(),
@@ -49,6 +50,14 @@ export async function PATCH(request: NextRequest) {
   // Strip accidental spaces from Meta IDs/tokens
   if (studioFields.whatsappPhoneNumberId) {
     studioFields.whatsappPhoneNumberId = studioFields.whatsappPhoneNumberId.trim();
+  }
+
+  // Normalize voicePhoneNumber to E.164 (drop spaces, parens, dashes; keep leading +)
+  if (studioFields.voicePhoneNumber) {
+    const cleaned = studioFields.voicePhoneNumber.replace(/[^\d+]/g, "");
+    studioFields.voicePhoneNumber = cleaned.length > 0 ? cleaned : null;
+  } else if (studioFields.voicePhoneNumber === "") {
+    studioFields.voicePhoneNumber = null;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

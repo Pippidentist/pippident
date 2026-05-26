@@ -2,10 +2,23 @@ import { NextRequest } from "next/server";
 import { anthropic } from "@ai-sdk/anthropic";
 import { streamText, type CoreMessage } from "ai";
 import { db } from "@/lib/db";
-import { studios, patients } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { studios, patients, type Studio, type Patient } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 import { buildVoiceSystemPrompt } from "./system-prompt";
 import { buildVoiceTools } from "./tools";
+
+/** Strips non-digit chars for loose phone comparison */
+function digitsOnly(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
+
+/** Loose phone match — handles +39 prefix variations and formatting */
+function phonesMatch(a: string, b: string): boolean {
+  const da = digitsOnly(a);
+  const db_ = digitsOnly(b);
+  if (!da || !db_) return false;
+  return da === db_ || da === db_.replace(/^39/, "") || db_ === da.replace(/^39/, "");
+}
 
 interface OpenAIMessage {
   role: "system" | "user" | "assistant" | "tool";
@@ -34,28 +47,26 @@ export async function handleChatCompletions(req: NextRequest): Promise<Response>
   }
 
   const url = new URL(req.url);
-  // Pick the first non-empty value across header / query / body / env.
-  // Important: ElevenLabs sends Variable-typed headers even when the
-  // variable is unresolved (phone calls have no widget context), and
-  // those come through as empty strings. Empty strings must fall
-  // through to the next source, not be treated as a real value.
   const firstNonEmpty = (...vals: Array<string | null | undefined>) =>
-    vals.find((v) => typeof v === "string" && v.trim().length > 0) ?? null;
+    vals.find((v) => typeof v === "string" && v.trim().length > 0 && !v.includes("{{")) ?? null;
 
-  const studioId = firstNonEmpty(
+  // ── Identification inputs, in precedence order ─────────────────────────────
+  // Browser test (widget passes dynamic variables) sets X-Studio-Id/X-Patient-Id.
+  // Phone calls (Twilio via ElevenLabs) set X-Called-Number/X-Caller-Id.
+  // Env vars are last-resort fallback for dev.
+  const explicitStudioId = firstNonEmpty(
     req.headers.get("x-studio-id"),
     url.searchParams.get("studio_id"),
-    body.studio_id,
-    process.env.PIPPIVOICE_DEFAULT_STUDIO_ID
+    body.studio_id
   );
-  const patientId = firstNonEmpty(
+  const explicitPatientId = firstNonEmpty(
     req.headers.get("x-patient-id"),
     url.searchParams.get("patient_id"),
-    body.patient_id,
-    process.env.PIPPIVOICE_DEFAULT_PATIENT_ID
+    body.patient_id
   );
+  const calledNumber = firstNonEmpty(req.headers.get("x-called-number"));
+  const callerId = firstNonEmpty(req.headers.get("x-caller-id"));
 
-  // Capture a curated list of headers (ignore internal ones) for debug
   const headerSummary: Record<string, string> = {};
   req.headers.forEach((value, key) => {
     if (key.startsWith("x-") || key === "user-agent" || key === "content-type") {
@@ -63,51 +74,104 @@ export async function handleChatCompletions(req: NextRequest): Promise<Response>
     }
   });
 
+  // ── Resolve studio ─────────────────────────────────────────────────────────
+  let studio: Studio | null = null;
+  let studioResolution = "none";
+  if (explicitStudioId) {
+    const [row] = await db.select().from(studios).where(eq(studios.id, explicitStudioId)).limit(1);
+    if (row) {
+      studio = row;
+      studioResolution = "explicit-id";
+    }
+  }
+  if (!studio && calledNumber) {
+    const [row] = await db
+      .select()
+      .from(studios)
+      .where(eq(studios.voicePhoneNumber, calledNumber))
+      .limit(1);
+    if (row) {
+      studio = row;
+      studioResolution = "called-number";
+    }
+  }
+  if (!studio && process.env.PIPPIVOICE_DEFAULT_STUDIO_ID) {
+    const [row] = await db
+      .select()
+      .from(studios)
+      .where(eq(studios.id, process.env.PIPPIVOICE_DEFAULT_STUDIO_ID))
+      .limit(1);
+    if (row) {
+      studio = row;
+      studioResolution = "env-default";
+    }
+  }
+
+  // ── Resolve patient (within studio) ────────────────────────────────────────
+  let patient: Patient | null = null;
+  let patientResolution = "none";
+  if (studio && explicitPatientId) {
+    const [row] = await db
+      .select()
+      .from(patients)
+      .where(and(eq(patients.id, explicitPatientId), eq(patients.studioId, studio.id)))
+      .limit(1);
+    if (row) {
+      patient = row;
+      patientResolution = "explicit-id";
+    }
+  }
+  if (!patient && studio && callerId) {
+    const candidates = await db
+      .select()
+      .from(patients)
+      .where(and(eq(patients.studioId, studio.id), eq(patients.isArchived, false)));
+    const match = candidates.find((p) => phonesMatch(p.phone, callerId));
+    if (match) {
+      patient = match;
+      patientResolution = "caller-id";
+    }
+  }
+  if (!patient && studio && process.env.PIPPIVOICE_DEFAULT_PATIENT_ID) {
+    const [row] = await db
+      .select()
+      .from(patients)
+      .where(and(eq(patients.id, process.env.PIPPIVOICE_DEFAULT_PATIENT_ID), eq(patients.studioId, studio.id)))
+      .limit(1);
+    if (row) {
+      patient = row;
+      patientResolution = "env-default";
+    }
+  }
+
   console.log("[pippivoice.llm] Request received:", {
     path: url.pathname,
-    queryParams: Object.fromEntries(url.searchParams.entries()),
     headers: headerSummary,
     bodyKeys: Object.keys(body),
-    studioId,
-    patientId,
+    explicitStudioId,
+    explicitPatientId,
+    calledNumber,
+    callerId,
+    studioResolution,
+    patientResolution,
+    studio: studio ? { id: studio.id, name: studio.name } : null,
+    patient: patient ? { id: patient.id, name: `${patient.firstName} ${patient.lastName}`, phone: patient.phone } : null,
     messageCount: Array.isArray(body.messages) ? body.messages.length : 0,
-    firstMessageRole: body.messages?.[0]?.role,
-    bodyPreview: JSON.stringify(body).slice(0, 400),
   });
 
-  if (!studioId || !patientId) {
-    console.error("[pippivoice.llm] Missing IDs. Full body:", JSON.stringify(body).slice(0, 1000));
+  if (!studio) {
     return jsonError(
-      400,
-      "Missing studio_id or patient_id (pass as query param or body field)"
+      404,
+      `Studio not identified. Tried X-Studio-Id, X-Called-Number (${calledNumber ?? "absent"}), env default. ` +
+        `For phone calls, set voicePhoneNumber in studio settings.`
     );
   }
-
-  if (studioId.includes("{{") || patientId.includes("{{")) {
-    console.error("[pippivoice.llm] Template not substituted:", { studioId, patientId });
+  if (!patient) {
     return jsonError(
-      400,
-      `IDs look like unsubstituted templates (studio_id=${studioId}). ` +
-        `Check ElevenLabs Extra Body Params + dynamic variables config.`
+      404,
+      `Patient not identified for studio ${studio.id}. Tried X-Patient-Id, X-Caller-Id (${callerId ?? "absent"}), env default. ` +
+        `For phone calls, register the caller's phone in the patients table.`
     );
-  }
-
-  const [studio] = await db
-    .select()
-    .from(studios)
-    .where(eq(studios.id, studioId))
-    .limit(1);
-  if (!studio) return jsonError(404, `Studio ${studioId} not found`);
-
-  const [patient] = await db
-    .select()
-    .from(patients)
-    .where(eq(patients.id, patientId))
-    .limit(1);
-  if (!patient) return jsonError(404, `Patient ${patientId} not found`);
-
-  if (patient.studioId !== studio.id) {
-    return jsonError(403, "Patient does not belong to this studio");
   }
 
   const inboundMessages = Array.isArray(body.messages) ? body.messages : [];

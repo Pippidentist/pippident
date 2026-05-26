@@ -96,6 +96,8 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
   const [creatingUser, setCreatingUser] = useState(false);
   const [whatsappPhoneNumberId, setWhatsappPhoneNumberId] = useState(studio.whatsappPhoneNumberId ?? "");
   const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+  const [voicePhoneNumber, setVoicePhoneNumber] = useState(studio.voicePhoneNumber ?? "");
+  const [savingVoice, setSavingVoice] = useState(false);
   const [savingHours, setSavingHours] = useState(false);
 
   const initOpeningHours = (): OpeningHoursState => {
@@ -186,6 +188,25 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
     }
   }
 
+  async function saveVoice(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingVoice(true);
+    try {
+      const res = await fetch("/api/settings/studio", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voicePhoneNumber: voicePhoneNumber.trim() || null }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Numero Pippivoice salvato");
+      router.refresh();
+    } catch {
+      toast.error("Errore nel salvataggio");
+    } finally {
+      setSavingVoice(false);
+    }
+  }
+
   function updateDay(day: DayKey, patch: Partial<DaySchedule>) {
     setOpeningHours((prev) => ({ ...prev, [day]: { ...prev[day], ...patch } }));
   }
@@ -239,6 +260,7 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
         <TabsTrigger value="orari">Orari</TabsTrigger>
         <TabsTrigger value="users">Utenti ({users.length})</TabsTrigger>
         <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+        <TabsTrigger value="pippivoice">Pippivoice</TabsTrigger>
       </TabsList>
 
       {/* Tab Studio */}
@@ -389,6 +411,46 @@ export function SettingsClient({ studio, studioUsers, currentUserId }: SettingsC
               <div className="flex justify-end">
                 <Button type="submit" disabled={savingWhatsapp}>
                   {savingWhatsapp ? "Salvataggio..." : "Salva configurazione WhatsApp"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* Tab Pippivoice */}
+      <TabsContent value="pippivoice" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Configurazione Pippivoice (Agente Vocale)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={saveVoice} className="space-y-4 max-w-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Numero Pippivoice (E.164)
+                </label>
+                <Input
+                  placeholder="es. +13203313961"
+                  value={voicePhoneNumber}
+                  onChange={(e) => setVoicePhoneNumber(e.target.value)}
+                />
+                <p className="text-xs text-gray-500 mt-1.5">
+                  Inserisci il numero Twilio (formato E.164, con prefisso paese, niente spazi) collegato all&apos;agente Pippivoice su ElevenLabs.
+                  Quando un paziente chiama questo numero, il sistema lo associa a questo studio.
+                </p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700 space-y-1">
+                <p className="font-medium">Come funziona:</p>
+                <ul className="list-disc list-inside space-y-0.5 text-xs">
+                  <li>Il paziente chiama questo numero dal suo telefono</li>
+                  <li>L&apos;agente AI risponde e gestisce prenotazioni, info, urgenze</li>
+                  <li>Se il numero del chiamante è già un paziente nel sistema, viene riconosciuto</li>
+                </ul>
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={savingVoice}>
+                  {savingVoice ? "Salvataggio..." : "Salva numero Pippivoice"}
                 </Button>
               </div>
             </form>

@@ -34,14 +34,30 @@ export async function handleChatCompletions(req: NextRequest): Promise<Response>
   }
 
   const url = new URL(req.url);
+  // Read IDs from (in order): X-* headers, URL query, body
   const studioId =
-    url.searchParams.get("studio_id") ?? body.studio_id ?? null;
+    req.headers.get("x-studio-id") ??
+    url.searchParams.get("studio_id") ??
+    body.studio_id ??
+    null;
   const patientId =
-    url.searchParams.get("patient_id") ?? body.patient_id ?? null;
+    req.headers.get("x-patient-id") ??
+    url.searchParams.get("patient_id") ??
+    body.patient_id ??
+    null;
+
+  // Capture a curated list of headers (ignore internal ones) for debug
+  const headerSummary: Record<string, string> = {};
+  req.headers.forEach((value, key) => {
+    if (key.startsWith("x-") || key === "user-agent" || key === "content-type") {
+      headerSummary[key] = value.length > 80 ? value.slice(0, 80) + "…" : value;
+    }
+  });
 
   console.log("[pippivoice.llm] Request received:", {
     path: url.pathname,
     queryParams: Object.fromEntries(url.searchParams.entries()),
+    headers: headerSummary,
     bodyKeys: Object.keys(body),
     studioId,
     patientId,

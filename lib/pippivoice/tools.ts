@@ -1,0 +1,536 @@
+import { tool, jsonSchema } from "ai";
+import { db } from "@/lib/db";
+import {
+  appointments,
+  patients,
+  treatmentTypes,
+  users,
+  studios,
+} from "@/lib/db/schema";
+import { eq, and, gte, lte, or, sql } from "drizzle-orm";
+import type { Studio, Patient } from "@/lib/db/schema";
+
+/** Formats a UTC Date as Italian label in Europe/Rome timezone (timezone-safe on Vercel) */
+function formatRomeLabel(date: Date): string {
+  return new Intl.DateTimeFormat("it-IT", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Europe/Rome",
+  }).format(date).replace(",", " alle");
+}
+
+function getRomeDateStr(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Rome",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function getRomeDayName(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    timeZone: "Europe/Rome",
+  }).format(date);
+}
+
+function romeTimeToUTC(dateStr: string, timeStr: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const [h, min] = timeStr.split(":").map(Number);
+  const ref = new Date(Date.UTC(y, m - 1, d, h, min));
+  const romeH = parseInt(
+    new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      hour12: false,
+      timeZone: "Europe/Rome",
+    }).format(ref)
+  );
+  let offset = romeH - h;
+  if (offset > 12) offset -= 24;
+  if (offset < -12) offset += 24;
+  return new Date(ref.getTime() - offset * 3_600_000);
+}
+
+const DEFAULT_OPENING_HOURS: Record<string, { open: string; close: string }> = {
+  Monday: { open: "09:00", close: "18:00" },
+  Tuesday: { open: "09:00", close: "18:00" },
+  Wednesday: { open: "09:00", close: "18:00" },
+  Thursday: { open: "09:00", close: "18:00" },
+  Friday: { open: "09:00", close: "18:00" },
+};
+
+export function buildVoiceTools(studio: Studio, patient: Patient) {
+  const studioId = studio.id;
+  const patientId = patient.id;
+
+  const settings = studio.settings as {
+    openingHours?: Record<string, { open: string; close: string }>;
+  } | null;
+
+  const openingHours =
+    settings?.openingHours && Object.keys(settings.openingHours).length > 0
+      ? settings.openingHours
+      : DEFAULT_OPENING_HOURS;
+
+  const getTreatments = tool({
+    description:
+      "Recupera la lista delle prestazioni dentistiche disponibili nello studio. Usa questo tool quando il paziente vuole sapere cosa offre lo studio o per trovare il tipo di cura giusto.",
+    parameters: jsonSchema({ type: "object" as const, properties: {} }),
+    execute: async () => {
+      const treatments = await db
+        .select({
+          id: treatmentTypes.id,
+          name: treatmentTypes.name,
+          description: treatmentTypes.description,
+          category: treatmentTypes.category,
+          defaultDurationMinutes: treatmentTypes.defaultDurationMinutes,
+        })
+        .from(treatmentTypes)
+        .where(
+          and(eq(treatmentTypes.studioId, studioId), eq(treatmentTypes.isActive, true))
+        )
+        .orderBy(treatmentTypes.category, treatmentTypes.name);
+
+      return { treatments };
+    },
+  });
+
+  const checkAvailability = tool({
+    description:
+      "Controlla gli slot disponibili per una prestazione. " +
+      "Usa targetDate (YYYY-MM-DD ora di Roma) per ottenere TUTTI gli slot liberi di un giorno specifico — è il caso d'uso principale. " +
+      "Senza targetDate restituisce i primi slot disponibili nei prossimi daysAhead giorni.",
+    parameters: jsonSchema({
+      type: "object" as const,
+      properties: {
+        treatmentId: {
+          type: "string",
+          description: "ID del tipo di trattamento (lascia vuoto per durata predefinita 30 min)",
+        },
+        targetDate: {
+          type: "string",
+          description: "Giorno specifico in formato YYYY-MM-DD (ora di Roma). Quando fornito, restituisce TUTTI gli slot liberi di quel giorno.",
+        },
+        daysAhead: {
+          type: "integer",
+          minimum: 1,
+          maximum: 30,
+          default: 7,
+          description: "Usato solo se targetDate non è specificato. Quanti giorni avanti cercare (default 7).",
+        },
+      },
+    }),
+    execute: async (args: unknown) => {
+      const { treatmentId, targetDate, daysAhead = 7 } = args as { treatmentId?: string; targetDate?: string; daysAhead?: number };
+      let durationMinutes = 30;
+      let treatmentName = "Visita";
+
+      if (treatmentId) {
+        const [treatment] = await db
+          .select({
+            defaultDurationMinutes: treatmentTypes.defaultDurationMinutes,
+            name: treatmentTypes.name,
+          })
+          .from(treatmentTypes)
+          .where(
+            and(
+              eq(treatmentTypes.id, treatmentId),
+              eq(treatmentTypes.studioId, studioId)
+            )
+          )
+          .limit(1);
+
+        if (treatment) {
+          durationMinutes = treatment.defaultDurationMinutes;
+          treatmentName = treatment.name;
+        }
+      }
+
+      const dentists = await db
+        .select({ id: users.id, name: users.fullName })
+        .from(users)
+        .where(
+          and(
+            eq(users.studioId, studioId),
+            eq(users.role, "dentist"),
+            eq(users.isActive, true)
+          )
+        );
+
+      if (dentists.length === 0) {
+        return {
+          slots: [],
+          message: "Nessun dentista disponibile al momento. Contatta lo studio.",
+        };
+      }
+
+      const slots: Array<{
+        startTime: string;
+        endTime: string;
+        dentistId: string;
+        dentistName: string;
+        treatmentTypeId: string | null;
+        label: string;
+      }> = [];
+
+      const now = new Date();
+
+      const datesToCheck: string[] = [];
+      if (targetDate) {
+        datesToCheck.push(targetDate);
+      } else {
+        for (let i = 0; i < daysAhead; i++) {
+          const d = new Date(now);
+          d.setDate(d.getDate() + 1 + i);
+          datesToCheck.push(getRomeDateStr(d));
+        }
+      }
+
+      for (const romeDateStr of datesToCheck) {
+        const [y, m, d] = romeDateStr.split("-").map(Number);
+        const baseDate = new Date(Date.UTC(y, m - 1, d, 12, 0));
+        const dayName = getRomeDayName(baseDate);
+        const dayHours = openingHours[dayName];
+
+        if (!dayHours) continue;
+
+        const [openH, openM] = dayHours.open.split(":").map(Number);
+        const [closeH, closeM] = dayHours.close.split(":").map(Number);
+        const openMinutes = openH * 60 + openM;
+        const closeMinutes = closeH * 60 + closeM;
+
+        for (
+          let slotStart = openMinutes;
+          slotStart + durationMinutes <= closeMinutes;
+          slotStart += durationMinutes
+        ) {
+          if (!targetDate && slots.length >= 20) break;
+          const slotEnd = slotStart + durationMinutes;
+
+          const startHH = String(Math.floor(slotStart / 60)).padStart(2, "0");
+          const startMM = String(slotStart % 60).padStart(2, "0");
+          const endHH = String(Math.floor(slotEnd / 60)).padStart(2, "0");
+          const endMM = String(slotEnd % 60).padStart(2, "0");
+
+          const slotStartUTC = romeTimeToUTC(romeDateStr, `${startHH}:${startMM}`);
+          const slotEndUTC = romeTimeToUTC(romeDateStr, `${endHH}:${endMM}`);
+
+          if (slotStartUTC <= now) continue;
+
+          for (const dentist of dentists) {
+            const conflicts = await db
+              .select({ id: appointments.id })
+              .from(appointments)
+              .where(
+                and(
+                  eq(appointments.studioId, studioId),
+                  eq(appointments.dentistId, dentist.id),
+                  sql`${appointments.status} NOT IN ('cancelled', 'no_show')`,
+                  or(
+                    and(
+                      gte(appointments.startTime, slotStartUTC),
+                      lte(appointments.startTime, slotEndUTC)
+                    ),
+                    and(
+                      gte(appointments.endTime, slotStartUTC),
+                      lte(appointments.endTime, slotEndUTC)
+                    ),
+                    and(
+                      lte(appointments.startTime, slotStartUTC),
+                      gte(appointments.endTime, slotEndUTC)
+                    )
+                  )
+                )
+              )
+              .limit(1);
+
+            if (conflicts.length === 0) {
+              const label = formatRomeLabel(slotStartUTC);
+
+              slots.push({
+                startTime: slotStartUTC.toISOString(),
+                endTime: slotEndUTC.toISOString(),
+                dentistId: dentist.id,
+                dentistName: dentist.name,
+                treatmentTypeId: treatmentId ?? null,
+                label,
+              });
+              break;
+            }
+          }
+        }
+      }
+
+      return {
+        slots,
+        treatmentName,
+        durationMinutes,
+        message:
+          slots.length === 0
+            ? targetDate
+              ? `Nessuno slot disponibile il ${targetDate}. Lo studio potrebbe essere chiuso o tutti i posti sono occupati.`
+              : `Nessuno slot disponibile nei prossimi ${daysAhead} giorni.`
+            : undefined,
+      };
+    },
+  });
+
+  const createBooking = tool({
+    description:
+      "Crea una prenotazione IN ATTESA per il paziente. Chiama questo tool SOLO dopo conferma vocale esplicita del paziente (sì/confermo/va bene). Lo stato sarà sempre 'In Attesa' — lo staff dello studio lo confermerà.",
+    parameters: jsonSchema({
+      type: "object" as const,
+      properties: {
+        treatmentTypeId: { type: "string", description: "UUID del tipo di trattamento — usa il campo 'treatmentTypeId' restituito da checkAvailability se presente, altrimenti ometti" },
+        startTime: { type: "string", description: "Orario inizio in formato ISO8601 UTC — usa il campo 'startTime' restituito da checkAvailability" },
+        endTime: { type: "string", description: "Orario fine in formato ISO8601 UTC — usa il campo 'endTime' restituito da checkAvailability" },
+        dentistId: { type: "string", description: "UUID del dentista — usa il campo 'dentistId' restituito da checkAvailability" },
+        notes: { type: "string", description: "Note aggiuntive (sintomi descritti, motivo)" },
+      },
+      required: ["startTime", "endTime", "dentistId"],
+    }),
+    execute: async (args: unknown) => {
+      console.log("[pippivoice.createBooking] Called with args:", JSON.stringify(args));
+      try {
+        const { treatmentTypeId, startTime, endTime, dentistId, notes } = args as { treatmentTypeId?: string | null; startTime: string; endTime: string; dentistId: string; notes?: string };
+
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const resolvedTreatmentTypeId = treatmentTypeId && UUID_RE.test(treatmentTypeId) ? treatmentTypeId : null;
+        if (treatmentTypeId && !UUID_RE.test(treatmentTypeId)) {
+          return {
+            success: false,
+            error: `treatmentTypeId non è un UUID valido. Chiama prima getTreatments per ottenere l'ID corretto, oppure ometti il campo.`,
+          };
+        }
+
+        const startDate = new Date(startTime);
+        const dayName = getRomeDayName(startDate);
+        const dayHours = openingHours[dayName];
+
+        if (!dayHours) {
+          return {
+            success: false,
+            error: "Lo studio è chiuso in questo giorno. Scegli un altro slot.",
+          };
+        }
+
+        const toMin = (hhmm: string) => {
+          const [h, m] = hhmm.split(":").map(Number);
+          return h * 60 + m;
+        };
+        const startTimeStr = new Intl.DateTimeFormat("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+          timeZone: "Europe/Rome",
+        }).format(startDate);
+        const endTimeStr = new Intl.DateTimeFormat("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+          timeZone: "Europe/Rome",
+        }).format(new Date(endTime));
+
+        if (
+          toMin(startTimeStr) < toMin(dayHours.open) ||
+          toMin(endTimeStr) > toMin(dayHours.close)
+        ) {
+          return {
+            success: false,
+            error: `Lo studio è aperto dalle ${dayHours.open} alle ${dayHours.close}. Scegli un altro slot.`,
+          };
+        }
+
+        const conflict = await db
+          .select({ id: appointments.id })
+          .from(appointments)
+          .where(
+            and(
+              eq(appointments.studioId, studioId),
+              eq(appointments.dentistId, dentistId),
+              sql`${appointments.status} NOT IN ('cancelled', 'no_show')`,
+              or(
+                and(
+                  gte(appointments.startTime, new Date(startTime)),
+                  lte(appointments.startTime, new Date(endTime))
+                ),
+                and(
+                  gte(appointments.endTime, new Date(startTime)),
+                  lte(appointments.endTime, new Date(endTime))
+                ),
+                and(
+                  lte(appointments.startTime, new Date(startTime)),
+                  gte(appointments.endTime, new Date(endTime))
+                )
+              )
+            )
+          )
+          .limit(1);
+
+        if (conflict.length > 0) {
+          return {
+            success: false,
+            error: "Lo slot non è più disponibile. Cerca altri slot con checkAvailability.",
+          };
+        }
+
+        const [appointment] = await db
+          .insert(appointments)
+          .values({
+            studioId,
+            patientId,
+            dentistId,
+            treatmentTypeId: resolvedTreatmentTypeId,
+            startTime: new Date(startTime),
+            endTime: new Date(endTime),
+            status: "pending",
+            notes: notes ?? null,
+          })
+          .returning({
+            id: appointments.id,
+            startTime: appointments.startTime,
+            endTime: appointments.endTime,
+            status: appointments.status,
+          });
+
+        const appointmentLabel = formatRomeLabel(new Date(startTime));
+
+        console.log("[pippivoice.createBooking] SUCCESS — appointmentId:", appointment.id);
+        return {
+          success: true,
+          appointmentId: appointment.id,
+          label: appointmentLabel,
+          status: "pending",
+          message:
+            "Prenotazione creata. Lo staff dello studio la confermerà a breve.",
+        };
+      } catch (err) {
+        console.error("[pippivoice.createBooking] EXCEPTION:", err);
+        return { success: false, error: "Errore interno nella creazione dell'appuntamento." };
+      }
+    },
+  });
+
+  const cancelBooking = tool({
+    description:
+      "Cancella un appuntamento del paziente. Verifica che l'appuntamento appartenga al paziente corrente prima di cancellarlo.",
+    parameters: jsonSchema({
+      type: "object" as const,
+      properties: {
+        appointmentId: { type: "string", description: "ID dell'appuntamento da cancellare" },
+        reason: { type: "string", description: "Motivo della cancellazione (opzionale)" },
+      },
+      required: ["appointmentId"],
+    }),
+    execute: async (args: unknown) => {
+      const { appointmentId } = args as { appointmentId: string; reason?: string };
+      const [appointment] = await db
+        .select({
+          id: appointments.id,
+          startTime: appointments.startTime,
+          status: appointments.status,
+        })
+        .from(appointments)
+        .where(
+          and(
+            eq(appointments.id, appointmentId),
+            eq(appointments.patientId, patientId),
+            eq(appointments.studioId, studioId)
+          )
+        )
+        .limit(1);
+
+      if (!appointment) {
+        return {
+          success: false,
+          error: "Appuntamento non trovato o non appartiene a questo paziente.",
+        };
+      }
+
+      if (appointment.status === "completed") {
+        return {
+          success: false,
+          error: "Non è possibile cancellare un appuntamento già effettuato.",
+        };
+      }
+
+      const label = formatRomeLabel(new Date(appointment.startTime));
+
+      await db
+        .delete(appointments)
+        .where(
+          and(
+            eq(appointments.id, appointmentId),
+            eq(appointments.patientId, patientId),
+            eq(appointments.studioId, studioId)
+          )
+        );
+
+      return { success: true, label };
+    },
+  });
+
+  const getMyAppointments = tool({
+    description:
+      "Recupera i prossimi appuntamenti del paziente (futuri, non cancellati). Usa questo tool quando il paziente vuole sapere quali appuntamenti ha o vuole cancellarne uno.",
+    parameters: jsonSchema({ type: "object" as const, properties: {} }),
+    execute: async () => {
+      const now = new Date();
+
+      const upcomingAppointments = await db
+        .select({
+          id: appointments.id,
+          startTime: appointments.startTime,
+          endTime: appointments.endTime,
+          status: appointments.status,
+          notes: appointments.notes,
+          treatmentName: treatmentTypes.name,
+          dentistName: users.fullName,
+        })
+        .from(appointments)
+        .leftJoin(treatmentTypes, eq(appointments.treatmentTypeId, treatmentTypes.id))
+        .leftJoin(users, eq(appointments.dentistId, users.id))
+        .where(
+          and(
+            eq(appointments.patientId, patientId),
+            eq(appointments.studioId, studioId),
+            gte(appointments.startTime, now),
+            sql`${appointments.status} NOT IN ('cancelled', 'no_show')`
+          )
+        )
+        .orderBy(appointments.startTime)
+        .limit(10);
+
+      const formatted = upcomingAppointments.map((a) => ({
+        id: a.id,
+        label: formatRomeLabel(new Date(a.startTime)),
+        treatment: a.treatmentName ?? "Visita",
+        dentist: a.dentistName ?? "Dentista",
+        status:
+          a.status === "pending"
+            ? "In Attesa di Conferma"
+            : a.status === "confirmed"
+            ? "Confermato"
+            : a.status,
+      }));
+
+      return {
+        appointments: formatted,
+        count: formatted.length,
+      };
+    },
+  });
+
+  return {
+    getTreatments,
+    checkAvailability,
+    createBooking,
+    cancelBooking,
+    getMyAppointments,
+  };
+}

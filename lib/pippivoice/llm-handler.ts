@@ -34,16 +34,20 @@ export async function handleChatCompletions(req: NextRequest): Promise<Response>
   }
 
   const url = new URL(req.url);
-  // Read IDs from (in order): X-* headers, URL query, body
+  // Read IDs from (in order): X-* headers, URL query, body, env defaults.
+  // Env defaults are useful for phone-call demos where no widget passes
+  // dynamic variables; in production we'll switch to caller-ID lookup.
   const studioId =
     req.headers.get("x-studio-id") ??
     url.searchParams.get("studio_id") ??
     body.studio_id ??
+    process.env.PIPPIVOICE_DEFAULT_STUDIO_ID ??
     null;
   const patientId =
     req.headers.get("x-patient-id") ??
     url.searchParams.get("patient_id") ??
     body.patient_id ??
+    process.env.PIPPIVOICE_DEFAULT_PATIENT_ID ??
     null;
 
   // Capture a curated list of headers (ignore internal ones) for debug

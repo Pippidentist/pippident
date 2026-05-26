@@ -186,8 +186,13 @@ export async function handleChatCompletions(req: NextRequest): Promise<Response>
   const systemPrompt = buildVoiceSystemPrompt(studio, patient);
   const tools = buildVoiceTools(studio, patient);
 
+  // Default to Haiku 4.5 for voice: ~2-3x faster than Sonnet, plenty smart
+  // for the receptionist workflow. Override via PIPPIVOICE_MODEL env var
+  // (e.g. "claude-sonnet-4-6") for A/B testing without redeploy.
+  const modelId = process.env.PIPPIVOICE_MODEL || "claude-haiku-4-5-20251001";
+
   const result = streamText({
-    model: anthropic("claude-sonnet-4-6"),
+    model: anthropic(modelId),
     system: systemPrompt,
     messages: coreMessages,
     tools,
@@ -195,7 +200,7 @@ export async function handleChatCompletions(req: NextRequest): Promise<Response>
     temperature: 0.4,
   });
 
-  const responseStream = openaiSseStream(result.textStream, body.model ?? "claude-sonnet-4-6");
+  const responseStream = openaiSseStream(result.textStream, body.model ?? modelId);
 
   return new Response(responseStream, {
     headers: {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Script from "next/script";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,6 @@ interface Props {
 }
 
 declare global {
-  // ElevenLabs convai web component element typings (minimal)
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
@@ -52,54 +51,38 @@ export default function PippivoiceTestClient({
     patients[0]?.id ?? ""
   );
   const [callActive, setCallActive] = useState(false);
-  const widgetContainerRef = useRef<HTMLDivElement>(null);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
 
   const selectedPatient = patients.find((p) => p.id === selectedPatientId);
 
-  const startCall = () => {
-    if (!agentId || !selectedPatient || !widgetContainerRef.current) return;
-
-    widgetContainerRef.current.innerHTML = "";
-
-    const widget = document.createElement("elevenlabs-convai");
-    widget.setAttribute("agent-id", agentId);
-    widget.setAttribute(
-      "dynamic-variables",
-      JSON.stringify({
+  const dynamicVariables = selectedPatient
+    ? JSON.stringify({
         studio_id: studio.id,
         patient_id: selectedPatient.id,
         studio_name: studio.name,
         patient_first_name: selectedPatient.firstName,
         patient_last_name: selectedPatient.lastName,
       })
-    );
+    : "{}";
 
-    widgetContainerRef.current.appendChild(widget);
+  const startCall = () => {
+    if (!agentId || !selectedPatient) return;
     setCallActive(true);
   };
 
   const endCall = () => {
-    if (widgetContainerRef.current) {
-      widgetContainerRef.current.innerHTML = "";
-    }
     setCallActive(false);
   };
-
-  useEffect(() => {
-    return () => {
-      if (widgetContainerRef.current) {
-        widgetContainerRef.current.innerHTML = "";
-      }
-    };
-  }, []);
 
   return (
     <>
       <Script
         src="https://elevenlabs.io/convai-widget/index.js"
-        strategy="lazyOnload"
+        strategy="afterInteractive"
         async
         type="text/javascript"
+        onLoad={() => setScriptLoaded(true)}
+        onReady={() => setScriptLoaded(true)}
       />
 
       <div className="space-y-6">
@@ -121,7 +104,7 @@ export default function PippivoiceTestClient({
                 <p className="font-semibold mb-1">Agent ID non configurato</p>
                 <p>
                   Aggiungi <code className="px-1 bg-orange-100 rounded">NEXT_PUBLIC_ELEVENLABS_AGENT_ID</code>{" "}
-                  nel tuo <code className="px-1 bg-orange-100 rounded">.env.local</code> con l'ID dell'agente creato in ElevenLabs.
+                  nel tuo <code className="px-1 bg-orange-100 rounded">.env.local</code> (locale) o nelle env vars Vercel, poi riavvia il dev server / fai un nuovo deploy.
                 </p>
               </div>
             </CardContent>
@@ -176,7 +159,7 @@ export default function PippivoiceTestClient({
               </p>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               {!callActive ? (
                 <Button
                   onClick={startCall}
@@ -196,11 +179,22 @@ export default function PippivoiceTestClient({
                   Termina chiamata
                 </Button>
               )}
+              {!scriptLoaded && (
+                <span className="text-xs text-gray-500">
+                  Caricamento widget…
+                </span>
+              )}
+            </div>
+
+            <div className="pt-2 text-xs text-gray-400 font-mono break-all border-t border-gray-100">
+              <p className="text-gray-500 mb-1">Debug — variabili passate all'agente:</p>
+              <p>agent_id: {agentId || "(MANCANTE)"}</p>
+              <p>dynamic_variables: {dynamicVariables}</p>
             </div>
           </CardContent>
         </Card>
 
-        {callActive && (
+        {callActive && selectedPatient && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base font-semibold">
@@ -208,13 +202,15 @@ export default function PippivoiceTestClient({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div
-                ref={widgetContainerRef}
-                className="min-h-[200px] flex items-center justify-center"
-              />
+              <div className="min-h-[200px] flex items-center justify-center">
+                <elevenlabs-convai
+                  agent-id={agentId}
+                  dynamic-variables={dynamicVariables}
+                />
+              </div>
               <p className="text-xs text-gray-500 mt-3">
-                Il widget ElevenLabs userà il microfono del browser. Concedi
-                l'accesso quando richiesto.
+                Il widget userà il microfono del browser. Concedi l'accesso
+                quando richiesto.
               </p>
             </CardContent>
           </Card>
@@ -229,13 +225,28 @@ export default function PippivoiceTestClient({
           <CardContent>
             <ul className="text-sm text-gray-600 space-y-1.5 list-disc pl-5">
               <li>Saluta e aspetta l'apertura dell'agente</li>
-              <li>Chiedi di prenotare una visita (es. "vorrei prenotare una visita di controllo")</li>
-              <li>Quando ti propone uno slot, conferma a voce: "sì, va bene"</li>
-              <li>Verifica nel DB ([appuntamenti](/dashboard/appointments/pending)) che la prenotazione sia stata creata</li>
-              <li>Prova a chiedere "che appuntamenti ho?" — deve elencarli</li>
-              <li>Prova un'urgenza: "ho un fortissimo mal di denti con gonfiore" — deve rimandare al pronto soccorso</li>
-              <li>Prova "sei un robot?" — deve rispondere onestamente</li>
-              <li>Prova "che orari fate?" — deve leggere gli orari dello studio</li>
+              <li>
+                Chiedi di prenotare una visita (es. &quot;vorrei prenotare una
+                visita di controllo&quot;)
+              </li>
+              <li>
+                Quando ti propone uno slot, conferma a voce: &quot;sì, va
+                bene&quot;
+              </li>
+              <li>
+                Verifica nel DB ([appuntamenti](/dashboard/appointments/pending))
+                che la prenotazione sia stata creata
+              </li>
+              <li>Prova a chiedere &quot;che appuntamenti ho?&quot;</li>
+              <li>
+                Prova un&apos;urgenza: &quot;ho un fortissimo mal di denti con
+                gonfiore&quot; — deve rimandare al pronto soccorso
+              </li>
+              <li>Prova &quot;sei un robot?&quot; — deve rispondere onestamente</li>
+              <li>
+                Prova &quot;che orari fate?&quot; — deve leggere gli orari dello
+                studio
+              </li>
               <li>Interrompi mentre parla (barge-in): vedi se si ferma</li>
             </ul>
           </CardContent>

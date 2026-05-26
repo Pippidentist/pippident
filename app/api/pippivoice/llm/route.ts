@@ -28,9 +28,12 @@ interface ChatCompletionRequest {
 
 export async function POST(req: NextRequest) {
   let body: ChatCompletionRequest;
+  let rawBody = "";
   try {
-    body = await req.json();
+    rawBody = await req.text();
+    body = JSON.parse(rawBody);
   } catch {
+    console.error("[pippivoice.llm] Invalid JSON. Raw body:", rawBody.slice(0, 500));
     return jsonError(400, "Invalid JSON body");
   }
 
@@ -40,10 +43,32 @@ export async function POST(req: NextRequest) {
   const patientId =
     url.searchParams.get("patient_id") ?? body.patient_id ?? null;
 
+  // Debug log — what did ElevenLabs actually send?
+  console.log("[pippivoice.llm] Request received:", {
+    queryParams: Object.fromEntries(url.searchParams.entries()),
+    bodyKeys: Object.keys(body),
+    studioId,
+    patientId,
+    messageCount: Array.isArray(body.messages) ? body.messages.length : 0,
+    firstMessageRole: body.messages?.[0]?.role,
+    bodyPreview: JSON.stringify(body).slice(0, 400),
+  });
+
   if (!studioId || !patientId) {
+    console.error("[pippivoice.llm] Missing IDs. Full body:", JSON.stringify(body).slice(0, 1000));
     return jsonError(
       400,
       "Missing studio_id or patient_id (pass as query param or body field)"
+    );
+  }
+
+  // Detect unresolved template literals (ElevenLabs forgot to substitute)
+  if (studioId.includes("{{") || patientId.includes("{{")) {
+    console.error("[pippivoice.llm] Template not substituted:", { studioId, patientId });
+    return jsonError(
+      400,
+      `IDs look like unsubstituted templates (studio_id=${studioId}). ` +
+        `Check ElevenLabs Extra Body Params + dynamic variables config.`
     );
   }
 
